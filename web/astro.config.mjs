@@ -1,10 +1,10 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
-// Site URL for GitHub Pages. The deploy CI job sets BASE_URL if/when
-// the site moves to a custom domain.
-const SITE = process.env.SITE_URL ?? 'https://kamsqe.github.io';
-const BASE = process.env.BASE_PATH ?? '/gitwhy';
+// Site URL. Defaults to the Cloudflare Pages production URL; the deploy
+// workflow can override for preview environments or a custom domain.
+const SITE = process.env.SITE_URL ?? 'https://gitwhy.pages.dev';
+const BASE = process.env.BASE_PATH ?? '/';
 
 export default defineConfig({
   site: SITE,

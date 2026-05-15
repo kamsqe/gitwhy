@@ -5,7 +5,7 @@
 
 ---
 
-**🌐 Live site / docs:** *(coming on launch — Astro site deployed to GitHub Pages)*
+**🌐 Live site / docs:** [gitwhy.pages.dev](https://gitwhy.pages.dev)
 **🎥 Demo video:** *(coming on launch)*
 **📦 Repository:** [github.com/kamsqe/gitwhy](https://github.com/kamsqe/gitwhy)
 **📜 License:** [MIT](./LICENSE)

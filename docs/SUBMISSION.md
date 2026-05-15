@@ -15,7 +15,7 @@ Every item below must exist at a fixed, grader-findable path:
 - [ ] `docs/video-script.md` — for reference / reproducibility
 - [ ] `tests/` — automated test suite (positive + negative + adversarial)
 - [ ] `web/` — Astro site sources
-- [ ] Live site URL: `https://kamsqe.github.io/gitwhy`
+- [ ] Live site URL: `https://gitwhy.pages.dev`
 
 ## 2. Capability verification (run these before submitting)
 
@@ -48,11 +48,11 @@ If any of these throws, the submission isn't ready.
 
 ## 3. Live site verification
 
-- [ ] Visit `https://kamsqe.github.io/gitwhy` in an incognito window — page loads, sidebar renders, all three deliverable doc pages visible.
+- [ ] Visit `https://gitwhy.pages.dev` in an incognito window — page loads, sidebar renders, all three deliverable doc pages visible.
 - [ ] The architecture page's Mermaid diagrams render (they're inline SVG; not just code blocks).
 - [ ] Internal links work; external GitHub links resolve.
 
-If the site doesn't deploy, the workflow logs at `https://github.com/kamsqe/gitwhy/actions` will say why. Most common: GitHub Pages source isn't set to "GitHub Actions" in repo settings.
+If the site doesn't deploy, the workflow logs at `https://github.com/kamsqe/gitwhy/actions` will say why. Most common: the `CLOUDFLARE_API_TOKEN` or `CLOUDFLARE_ACCOUNT_ID` repo secret is missing.
 
 ## 4. Video demo
 
