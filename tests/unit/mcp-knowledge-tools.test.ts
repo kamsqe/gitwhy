@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { createInsightAgent } from '../../src/agents/insight/index.js';
 import { createKnowledgeAgent } from '../../src/agents/knowledge/index.js';
 import { defaultConfig } from '../../src/config/index.js';
 import type { McpRuntime, McpRuntimeFactory } from '../../src/mcp/runtime.js';
@@ -6,6 +7,7 @@ import { catchupTool, parseSince } from '../../src/mcp/tools/catchup.js';
 import { historyTool } from '../../src/mcp/tools/history.js';
 import { searchTool } from '../../src/mcp/tools/search.js';
 import { whyTool } from '../../src/mcp/tools/why.js';
+import { createNullTracer } from '../../src/observability/tracer.js';
 import { createMockLlmProvider } from '../../src/providers/llm/mock.js';
 import { createSqliteBlobVectorStore } from '../../src/providers/vector/sqlite-blob.js';
 import { upsertCommit } from '../../src/storage/commits-repo.js';
@@ -51,7 +53,17 @@ function makeRuntime(db: DatabaseType): McpRuntime {
   });
   const vectorStore = createSqliteBlobVectorStore({ db });
   const knowledge = createKnowledgeAgent({ db, llm, vectorStore, config: defaultConfig });
-  return { cwd: '/tmp/test', db, llm, vectorStore, knowledge, config: defaultConfig };
+  const insight = createInsightAgent(db);
+  return {
+    cwd: '/tmp/test',
+    db,
+    llm,
+    vectorStore,
+    knowledge,
+    insight,
+    config: defaultConfig,
+    tracer: createNullTracer(),
+  };
 }
 
 function makeFactory(runtime: McpRuntime): McpRuntimeFactory {

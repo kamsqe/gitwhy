@@ -2,10 +2,17 @@
 import { Command } from 'commander';
 import { runCommitCommand } from './commands/commit.js';
 import { runEstimate } from './commands/estimate.js';
+import {
+  recentFeedback,
+  submitFeedback,
+  summarizeFeedback,
+} from './commands/feedback.js';
 import { runIndexCommand } from './commands/index-command.js';
 import { runInit } from './commands/init.js';
+import { runMcpDoctor } from './commands/mcp-doctor.js';
 import { runRelatedCommand } from './commands/related.js';
 import { runRiskCommand } from './commands/risk.js';
+import { runStatusCommand } from './commands/status.js';
 import { runWhyCommand } from './commands/why.js';
 import { loadDotEnv } from '../utils/env.js';
 import { logger } from '../utils/logger.js';
@@ -197,6 +204,116 @@ program
     }
     if (!result.applied) {
       process.stdout.write('\nTo apply: re-run with --apply, or copy-paste into `git commit`.\n');
+    }
+  });
+
+program
+  .command('status')
+  .description('Show index health, token spend, and warnings')
+  .action(async () => {
+    const r = await runStatusCommand({ cwd: process.cwd() });
+    if (!r.initialized) {
+      process.stdout.write('gitwhy is not initialized in this directory.\n');
+      for (const w of r.warnings) process.stdout.write(`  ⚠ ${w}\n`);
+      return;
+    }
+    process.stdout.write(
+      `Indexed: ${r.indexedCommits}/${r.gitTotalCommits} commits  (${(r.indexCoverage * 100).toFixed(0)}% coverage)\n`,
+    );
+    process.stdout.write(`Embeddings: ${r.embeddings}\n`);
+    process.stdout.write(
+      `LLM usage: ${r.llmCalls} calls, ${r.promptTokens}+${r.completionTokens} tokens, $${r.costUsd.toFixed(4)}\n`,
+    );
+    if (r.lastIndexedAt) {
+      process.stdout.write(`Last indexed: ${r.lastIndexedAt.toISOString()}\n`);
+    }
+    process.stdout.write(`DB size: ${(r.dbSizeBytes / 1024).toFixed(0)} KB\n`);
+    if (r.topHotspots.length > 0) {
+      process.stdout.write('\nTop hotspots (last 30 days):\n');
+      for (const h of r.topHotspots) {
+        process.stdout.write(`  ${h.path}  (${h.recentCommits} commits)\n`);
+      }
+    }
+    if (r.warnings.length > 0) {
+      process.stdout.write('\nWarnings:\n');
+      for (const w of r.warnings) process.stdout.write(`  ⚠ ${w}\n`);
+    }
+  });
+
+program
+  .command('mcp-doctor')
+  .description('Diagnose MCP setup: tools, credentials, index readiness')
+  .option('--no-probe', 'skip the live LLM probe call')
+  .action(async (opts: { probe?: boolean }) => {
+    const r = await runMcpDoctor({
+      cwd: process.cwd(),
+      probeLlm: opts.probe !== false,
+    });
+    for (const check of r.checks) {
+      const icon = check.level === 'ok' ? '✓' : check.level === 'warn' ? '⚠' : '✗';
+      process.stdout.write(`${icon} ${check.title}\n    ${check.detail}\n`);
+    }
+    process.stdout.write(
+      `\nSummary: ${r.summary.ok} ok, ${r.summary.warn} warn, ${r.summary.fail} fail.\n`,
+    );
+    if (r.summary.fail > 0) process.exitCode = 1;
+  });
+
+program
+  .command('feedback <rating>')
+  .description('Record up/down feedback on a recent answer (rating = up | down)')
+  .requiredOption('-q, --question <text>', 'the question that was asked')
+  .option('-a, --answer <text>', 'the answer that was returned')
+  .option('-c, --confidence <n>', 'reported confidence 0-1', parseFloat)
+  .option('-n, --note <text>', 'optional free-text note')
+  .action((rating: string, opts: { question: string; answer?: string; confidence?: number; note?: string }) => {
+    if (rating !== 'up' && rating !== 'down') {
+      throw new Error('rating must be "up" or "down"');
+    }
+    const id = submitFeedback({
+      cwd: process.cwd(),
+      rating,
+      question: opts.question,
+      ...(opts.answer !== undefined && { answer: opts.answer }),
+      ...(opts.confidence !== undefined && { confidence: opts.confidence }),
+      ...(opts.note !== undefined && { note: opts.note }),
+    });
+    process.stdout.write(`Recorded feedback #${id}\n`);
+  });
+
+program
+  .command('feedback:summary')
+  .description('Summarize stored feedback (up rate, average confidence)')
+  .action(() => {
+    const s = summarizeFeedback(process.cwd());
+    process.stdout.write(`Total: ${s.total}\n`);
+    process.stdout.write(`Up: ${s.upCount}  Down: ${s.downCount}\n`);
+    process.stdout.write(`Up rate: ${(s.upRate * 100).toFixed(0)}%\n`);
+    if (s.averageConfidence !== null) {
+      process.stdout.write(`Avg confidence: ${(s.averageConfidence * 100).toFixed(0)}%\n`);
+    }
+  });
+
+program
+  .command('feedback:list')
+  .description('Show recent feedback entries')
+  .option('-k, --limit <n>', 'max entries (default 20)', (v) => parseInt(v, 10))
+  .option('--rating <r>', 'filter to "up" or "down"')
+  .action((opts: { limit?: number; rating?: 'up' | 'down' }) => {
+    const rows = recentFeedback({
+      cwd: process.cwd(),
+      limit: opts.limit ?? 20,
+      ...(opts.rating !== undefined && { rating: opts.rating }),
+    });
+    if (rows.length === 0) {
+      process.stdout.write('No feedback recorded yet.\n');
+      return;
+    }
+    for (const r of rows) {
+      const icon = r.rating === 'up' ? '👍' : '👎';
+      const date = r.occurredAt.toISOString().slice(0, 16).replace('T', ' ');
+      process.stdout.write(`${icon}  ${date}  ${r.question}\n`);
+      if (r.note) process.stdout.write(`    note: ${r.note}\n`);
     }
   });
 

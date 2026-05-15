@@ -109,3 +109,19 @@ CREATE TABLE IF NOT EXISTS cluster_embeddings (
     indexed_at INTEGER NOT NULL,
     FOREIGN KEY (cluster_id) REFERENCES commit_clusters(cluster_id) ON DELETE CASCADE
 );
+
+-- User feedback on Knowledge-agent answers. Stored locally; never sent
+-- anywhere. Used to track answer quality over time.
+CREATE TABLE IF NOT EXISTS query_feedback (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    occurred_at     INTEGER NOT NULL,
+    question        TEXT NOT NULL,
+    answer          TEXT,
+    rating          TEXT NOT NULL CHECK (rating IN ('up', 'down')),
+    confidence      REAL,
+    citations       TEXT,         -- JSON array of cited commit hashes
+    note            TEXT          -- optional free-text note
+);
+
+CREATE INDEX IF NOT EXISTS idx_query_feedback_rating ON query_feedback(rating);
+CREATE INDEX IF NOT EXISTS idx_query_feedback_occurred_at ON query_feedback(occurred_at);

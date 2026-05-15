@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Database as DatabaseType } from 'better-sqlite3';
 import { createInsightAgent } from '../agents/insight/index.js';
 import type { InsightAgent } from '../agents/insight/index.js';
@@ -6,6 +7,8 @@ import { createKnowledgeAgent } from '../agents/knowledge/index.js';
 import type { KnowledgeAgent } from '../agents/knowledge/index.js';
 import type { GitWhyConfig } from '../config/index.js';
 import { loadConfig, resolvePaths } from '../config/loader.js';
+import { createDefaultTracer } from '../observability/tracer.js';
+import type { Tracer } from '../observability/tracer.js';
 import { createGeminiProvider } from '../providers/llm/gemini.js';
 import { createMockLlmProvider } from '../providers/llm/mock.js';
 import { createOpenAiProvider } from '../providers/llm/openai.js';
@@ -23,6 +26,7 @@ export interface McpRuntime {
   readonly knowledge: KnowledgeAgent;
   readonly insight: InsightAgent;
   readonly config: GitWhyConfig;
+  readonly tracer: Tracer;
 }
 
 export interface McpRuntimeFactory {
@@ -64,8 +68,11 @@ export function createMcpRuntimeFactory(options: CreateRuntimeOptions): McpRunti
       const vectorStore = createSqliteBlobVectorStore({ db });
       const knowledge = createKnowledgeAgent({ db, llm, vectorStore, config });
       const insight = createInsightAgent(db);
+      const traceFile = join(paths.tracesDir, `${new Date().toISOString().replace(/[:.]/g, '-')}.ndjson`);
+      const tracer = createDefaultTracer(traceFile);
+      tracer.emit({ kind: 'cli', data: { action: 'runtime_init', provider: llm.name } });
 
-      cached = { cwd: options.cwd, db, llm, vectorStore, knowledge, insight, config };
+      cached = { cwd: options.cwd, db, llm, vectorStore, knowledge, insight, config, tracer };
       return cached;
     },
     reset(): void {

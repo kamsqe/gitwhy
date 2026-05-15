@@ -6,6 +6,7 @@ import type { McpRuntime, McpRuntimeFactory } from '../../src/mcp/runtime.js';
 import { contextForPrTool } from '../../src/mcp/tools/context-for-pr.js';
 import { relatedTool } from '../../src/mcp/tools/related.js';
 import { riskTool } from '../../src/mcp/tools/risk.js';
+import { createNullTracer } from '../../src/observability/tracer.js';
 import { createMockLlmProvider } from '../../src/providers/llm/mock.js';
 import { createSqliteBlobVectorStore } from '../../src/providers/vector/sqlite-blob.js';
 import { openDatabase } from '../../src/storage/sqlite.js';
@@ -28,6 +29,7 @@ function makeFactory(db: DatabaseType): McpRuntimeFactory {
     knowledge,
     insight,
     config: defaultConfig,
+    tracer: createNullTracer(),
   };
   return { get: () => runtime, reset: () => undefined };
 }

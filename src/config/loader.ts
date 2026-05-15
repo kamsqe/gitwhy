@@ -35,6 +35,7 @@ export interface GitWhyPaths {
   readonly indexDir: string;
   readonly commitsDb: string;
   readonly statsFile: string;
+  readonly tracesDir: string;
 }
 
 export function resolvePaths(cwd: string, config: GitWhyConfig = defaultConfig): GitWhyPaths {
@@ -45,6 +46,7 @@ export function resolvePaths(cwd: string, config: GitWhyConfig = defaultConfig):
     indexDir: join(root, 'index'),
     commitsDb: join(root, 'index', 'commits.sqlite'),
     statsFile: join(root, 'stats.json'),
+    tracesDir: join(root, 'traces'),
   };
 }
 

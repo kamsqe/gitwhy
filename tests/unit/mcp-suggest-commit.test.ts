@@ -7,6 +7,7 @@ import { createKnowledgeAgent } from '../../src/agents/knowledge/index.js';
 import { defaultConfig } from '../../src/config/index.js';
 import type { McpRuntime, McpRuntimeFactory } from '../../src/mcp/runtime.js';
 import { suggestCommitMessageTool } from '../../src/mcp/tools/suggest-commit-message.js';
+import { createNullTracer } from '../../src/observability/tracer.js';
 import { createMockLlmProvider } from '../../src/providers/llm/mock.js';
 import { createSqliteBlobVectorStore } from '../../src/providers/vector/sqlite-blob.js';
 import { openDatabase } from '../../src/storage/sqlite.js';
@@ -28,6 +29,7 @@ function makeFactory(db: DatabaseType, cwd: string, llm = createMockLlmProvider(
     knowledge,
     insight,
     config: defaultConfig,
+    tracer: createNullTracer(),
   };
   return { get: () => runtime, reset: () => undefined };
 }

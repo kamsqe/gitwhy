@@ -7,6 +7,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { zodToJsonSchema } from 'zod-to-json-schema';
+import type { Tracer } from '../observability/tracer.js';
 import { createMcpRuntimeFactory } from './runtime.js';
 import type { McpRuntimeFactory } from './runtime.js';
 import { registerBuiltinTools } from './tools/index.js';
@@ -63,10 +64,28 @@ export function createServer(options: CreateServerOptions = {}): Server {
         isError: true,
       };
     }
-    const response = await tool.handler(parsed.data, ctx);
-    // McpToolResponse is a strict subset of CallToolResult (the SDK's union
-    // adds an index signature and an optional task-async branch we don't use).
-    return response as CallToolResult;
+
+    // Try to capture timing via the runtime's tracer when available. Tools
+    // like gitwhy.ping don't touch the runtime, so we tolerate the throw.
+    let tracer: Tracer | null = null;
+    try {
+      const rt = ctx.runtime.get();
+      tracer = rt.tracer;
+    } catch {
+      tracer = null;
+    }
+
+    const invokeHandler = async (): Promise<CallToolResult> => {
+      const response = await tool.handler(parsed.data, ctx);
+      // McpToolResponse is a strict subset of CallToolResult (the SDK's union
+      // adds an index signature and an optional task-async branch we don't use).
+      return response as CallToolResult;
+    };
+
+    if (tracer) {
+      return tracer.withSpan('mcp_tool', { tool: tool.name }, invokeHandler);
+    }
+    return invokeHandler();
   });
 
   return server;
