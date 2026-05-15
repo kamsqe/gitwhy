@@ -1,5 +1,7 @@
 import { existsSync } from 'node:fs';
 import type { Database as DatabaseType } from 'better-sqlite3';
+import { createInsightAgent } from '../agents/insight/index.js';
+import type { InsightAgent } from '../agents/insight/index.js';
 import { createKnowledgeAgent } from '../agents/knowledge/index.js';
 import type { KnowledgeAgent } from '../agents/knowledge/index.js';
 import type { GitWhyConfig } from '../config/index.js';
@@ -19,6 +21,7 @@ export interface McpRuntime {
   readonly llm: LlmProvider;
   readonly vectorStore: VectorStore;
   readonly knowledge: KnowledgeAgent;
+  readonly insight: InsightAgent;
   readonly config: GitWhyConfig;
 }
 
@@ -60,8 +63,9 @@ export function createMcpRuntimeFactory(options: CreateRuntimeOptions): McpRunti
       const db = openDatabase({ path: paths.commitsDb });
       const vectorStore = createSqliteBlobVectorStore({ db });
       const knowledge = createKnowledgeAgent({ db, llm, vectorStore, config });
+      const insight = createInsightAgent(db);
 
-      cached = { cwd: options.cwd, db, llm, vectorStore, knowledge, config };
+      cached = { cwd: options.cwd, db, llm, vectorStore, knowledge, insight, config };
       return cached;
     },
     reset(): void {

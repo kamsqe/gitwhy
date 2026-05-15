@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
+import { runCommitCommand } from './commands/commit.js';
 import { runEstimate } from './commands/estimate.js';
 import { runIndexCommand } from './commands/index-command.js';
 import { runInit } from './commands/init.js';
+import { runRelatedCommand } from './commands/related.js';
+import { runRiskCommand } from './commands/risk.js';
 import { runWhyCommand } from './commands/why.js';
 import { loadDotEnv } from '../utils/env.js';
 import { logger } from '../utils/logger.js';
@@ -116,6 +119,84 @@ program
     );
     if (result.idk) {
       process.stdout.write('Result flagged as low-confidence ("I don\'t know" mode).\n');
+    }
+  });
+
+program
+  .command('risk <path>')
+  .description('Compute a risk assessment (LOW/MEDIUM/HIGH) for a file or directory')
+  .action((path: string) => {
+    const { risk, busFactor } = runRiskCommand({ cwd: process.cwd(), path });
+    if (risk.inputs.totalCommits === 0) {
+      process.stdout.write(`No indexed history for "${path}".\n`);
+      return;
+    }
+    process.stdout.write(
+      `\n${risk.level.toUpperCase()} risk (score ${risk.score.toFixed(2)})  —  ${path}\n\n`,
+    );
+    process.stdout.write('Reasons:\n');
+    for (const reason of risk.reasons) process.stdout.write(`  • ${reason}\n`);
+    process.stdout.write(
+      `\nStats: bus factor ${risk.inputs.busFactor}, ${risk.inputs.contributorCount} contributors, ` +
+        `${risk.inputs.totalCommits} commits, ${risk.inputs.recentCommits90d} in last 90 days.\n`,
+    );
+    if (busFactor.contributors.length > 0) {
+      process.stdout.write('\nTop contributors:\n');
+      for (const c of busFactor.contributors.slice(0, 5)) {
+        const date = c.lastCommit.toISOString().slice(0, 10);
+        process.stdout.write(
+          `  ${c.authorName.padEnd(25)} ${c.sharePercent.toFixed(0).padStart(3)}%  ${c.commits} commits, last ${date}\n`,
+        );
+      }
+    }
+  });
+
+program
+  .command('related <path>')
+  .description('Show files that historically change together with the given file')
+  .option('-k, --limit <n>', 'max results (default 10)', (v) => parseInt(v, 10))
+  .option('--min <n>', 'min co-commit threshold (default 2)', (v) => parseInt(v, 10))
+  .action((path: string, opts: { limit?: number; min?: number }) => {
+    const { related } = runRelatedCommand({
+      cwd: process.cwd(),
+      path,
+      ...(opts.limit !== undefined && { limit: opts.limit }),
+      ...(opts.min !== undefined && { minCoCommits: opts.min }),
+    });
+    if (related.length === 0) {
+      process.stdout.write(`No co-changing files found for "${path}".\n`);
+      return;
+    }
+    process.stdout.write(`\nFiles that change with "${path}":\n`);
+    for (const r of related) {
+      process.stdout.write(
+        `  ${r.path.padEnd(50)} ${r.coCommits}/${r.thisFileCommits} commits  (${(r.forwardConfidence * 100).toFixed(0)}%)\n`,
+      );
+    }
+  });
+
+program
+  .command('commit')
+  .description('Generate a commit message from staged changes (and optionally apply it)')
+  .option('--style <style>', 'conventional | plain', 'conventional')
+  .option('--scope <name>', 'Conventional Commits scope hint')
+  .option('--apply', 'run `git commit -m <message>` after generating', false)
+  .action(async (opts: { style?: 'conventional' | 'plain'; scope?: string; apply?: boolean }) => {
+    const result = await runCommitCommand({
+      cwd: process.cwd(),
+      ...(opts.style !== undefined && { style: opts.style }),
+      ...(opts.scope !== undefined && { scope: opts.scope }),
+      ...(opts.apply !== undefined && { apply: opts.apply }),
+    });
+    process.stdout.write(`\n${result.message}\n\n`);
+    if (result.redactedSecrets > 0) {
+      process.stdout.write(`(${result.redactedSecrets} secret(s) redacted before sending the diff to the LLM.)\n`);
+    }
+    if (result.truncated) {
+      process.stdout.write('(Diff was truncated; consider smaller commits for accuracy.)\n');
+    }
+    if (!result.applied) {
+      process.stdout.write('\nTo apply: re-run with --apply, or copy-paste into `git commit`.\n');
     }
   });
 

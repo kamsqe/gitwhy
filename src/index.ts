@@ -59,6 +59,29 @@ export type {
   Citation,
 } from './agents/knowledge/index.js';
 
+export {
+  createInsightAgent,
+  calculateBusFactor,
+  getHotspots,
+  detectGhostCode,
+  findRelatedFiles,
+  calculateRiskScore,
+} from './agents/insight/index.js';
+export type {
+  InsightAgent,
+  BusFactorResult,
+  ContributorShare,
+  Hotspot,
+  HotspotOptions,
+  GhostCode,
+  GhostCodeOptions,
+  RelatedFile,
+  CoChangeOptions,
+  RiskLevel,
+  RiskScoreInputs,
+  RiskScoreResult,
+} from './agents/insight/index.js';
+
 export { createSqliteBlobVectorStore, cosineSimilarity } from './providers/vector/sqlite-blob.js';
 export { createMockLlmProvider } from './providers/llm/mock.js';
 export { createOpenAiProvider } from './providers/llm/openai.js';
