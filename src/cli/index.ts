@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
+import { runEstimate } from './commands/estimate.js';
+import { runIndexCommand } from './commands/index-command.js';
+import { runInit } from './commands/init.js';
 import { logger } from '../utils/logger.js';
 
 const program = new Command();
@@ -19,6 +22,61 @@ program
   });
 
 program
+  .command('init')
+  .description('Initialize gitwhy in the current repository (creates .gitwhy/)')
+  .option('--force', 'overwrite existing config', false)
+  .action(async (opts: { force?: boolean }) => {
+    const result = await runInit({
+      cwd: process.cwd(),
+      ...(opts.force !== undefined && { force: opts.force }),
+    });
+    if (result.created) {
+      process.stdout.write(`✓ initialized gitwhy at ${result.path}\n`);
+    } else {
+      process.stdout.write(`gitwhy already initialized at ${result.path}\n`);
+    }
+    process.stdout.write(`  commits in repo: ${result.diagnostics.totalCommits}\n`);
+    for (const w of result.warnings) {
+      process.stdout.write(`  ⚠ ${w}\n`);
+    }
+  });
+
+program
+  .command('estimate')
+  .description('Dry-run cost estimation for indexing the current repo')
+  .action(async () => {
+    const result = await runEstimate({ cwd: process.cwd() });
+    process.stdout.write(`\nEstimate for ${result.totalCommits} commits (model: ${result.enrichmentModel})\n\n`);
+    process.stdout.write('Category       Count   LLM calls   Tokens (prompt/completion)   Est. cost\n');
+    process.stdout.write('-'.repeat(85) + '\n');
+    for (const c of result.byCategory) {
+      const tokens = `${c.estimatedPromptTokens}/${c.estimatedCompletionTokens}`;
+      process.stdout.write(
+        `${c.category.padEnd(15)}${String(c.count).padEnd(8)}${String(c.llmCallsPlanned).padEnd(12)}${tokens.padEnd(29)}$${c.estimatedUsd.toFixed(4)}\n`,
+      );
+    }
+    process.stdout.write('-'.repeat(85) + '\n');
+    process.stdout.write(
+      `${'TOTAL'.padEnd(15)}${String(result.totalCommits).padEnd(8)}${String(result.grandTotal.llmCallsPlanned).padEnd(12)}${`${result.grandTotal.promptTokens}/${result.grandTotal.completionTokens}`.padEnd(29)}$${result.grandTotal.usd.toFixed(4)}\n`,
+    );
+  });
+
+program
+  .command('index')
+  .description('Index the repository: parse commits, enrich with AI, store in .gitwhy/')
+  .option('--provider <name>', 'LLM provider (openai|mock)', 'openai')
+  .option('--model <name>', 'override the enrichment model')
+  .option('--budget <usd>', 'stop indexing if cost exceeds this many USD', parseFloat)
+  .action(async (opts: { provider?: 'openai' | 'mock'; model?: string; budget?: number }) => {
+    await runIndexCommand({
+      cwd: process.cwd(),
+      ...(opts.provider !== undefined && { provider: opts.provider }),
+      ...(opts.model !== undefined && { model: opts.model }),
+      ...(opts.budget !== undefined && { budgetUsd: opts.budget }),
+    });
+  });
+
+program
   .command('mcp')
   .description('Start the gitwhy MCP server on stdio')
   .action(async () => {
@@ -31,9 +89,6 @@ program
     await server.connect(transport);
     logger.info('MCP server connected on stdio');
   });
-
-// Phase 2-4: init, index, why, risk, catchup, commit, related, context-for-pr,
-// mcp-doctor, estimate. Stubs added as each feature lands.
 
 program.parseAsync(process.argv).catch((err: unknown) => {
   const message = err instanceof Error ? err.message : String(err);
