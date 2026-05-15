@@ -1,5 +1,5 @@
 -- GitWhy metadata schema. Loaded by `openDatabase` on first use.
--- Embeddings live in a separate vector store (sqlite-vec or ChromaDB).
+-- Embeddings are stored inline as BLOB rows; vector search is done in JS.
 -- This file is shipped in the npm package; edits here must be reflected
 -- in a migration step that runs against existing user databases.
 
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS schema_meta (
     value TEXT NOT NULL
 );
 
-INSERT OR IGNORE INTO schema_meta (key, value) VALUES ('schema_version', '1');
+INSERT OR REPLACE INTO schema_meta (key, value) VALUES ('schema_version', '2');
 
 -- One row per indexed commit.
 CREATE TABLE IF NOT EXISTS commits (
@@ -85,3 +85,27 @@ CREATE TABLE IF NOT EXISTS llm_calls (
 
 CREATE INDEX IF NOT EXISTS idx_llm_calls_occurred_at ON llm_calls(occurred_at);
 CREATE INDEX IF NOT EXISTS idx_llm_calls_purpose ON llm_calls(purpose);
+
+-- Vector embeddings for semantic search over enriched commit summaries.
+-- Stored as BLOB (raw float32 little-endian). Search is done in JS via
+-- cosine similarity; works well up to ~50k commits at <200ms/query.
+CREATE TABLE IF NOT EXISTS commit_embeddings (
+    commit_hash TEXT PRIMARY KEY,
+    embedding   BLOB NOT NULL,
+    dimensions  INTEGER NOT NULL,
+    model       TEXT NOT NULL,
+    indexed_at  INTEGER NOT NULL,
+    FOREIGN KEY (commit_hash) REFERENCES commits(hash) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_commit_embeddings_model ON commit_embeddings(model);
+
+-- Optional: embeddings for cluster summaries.
+CREATE TABLE IF NOT EXISTS cluster_embeddings (
+    cluster_id TEXT PRIMARY KEY,
+    embedding  BLOB NOT NULL,
+    dimensions INTEGER NOT NULL,
+    model      TEXT NOT NULL,
+    indexed_at INTEGER NOT NULL,
+    FOREIGN KEY (cluster_id) REFERENCES commit_clusters(cluster_id) ON DELETE CASCADE
+);

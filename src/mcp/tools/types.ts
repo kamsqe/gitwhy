@@ -1,9 +1,14 @@
 import type { z } from 'zod';
+import type { McpRuntimeFactory } from '../runtime.js';
 
 export interface McpToolContext {
-  // Populated in later phases: db, vector store, llm provider, config, tracer.
-  // Kept minimal in Phase 1 so the seam is stable.
   readonly cwd: string;
+  /**
+   * Lazy accessor for the shared runtime (DB, LLM, vector store, agents).
+   * Tools that need state call `ctx.runtime.get()` on demand. Trivial tools
+   * (e.g. `gitwhy.ping`) don't touch it and remain cheap.
+   */
+  readonly runtime: McpRuntimeFactory;
 }
 
 export interface McpToolResponse {

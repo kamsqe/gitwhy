@@ -7,19 +7,25 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { zodToJsonSchema } from 'zod-to-json-schema';
+import { createMcpRuntimeFactory } from './runtime.js';
+import type { McpRuntimeFactory } from './runtime.js';
 import { registerBuiltinTools } from './tools/index.js';
 import { getTool, listTools } from './tools/registry.js';
 import type { McpToolContext } from './tools/types.js';
 
 export interface CreateServerOptions {
   readonly cwd?: string;
+  /** Override the runtime factory (used by tests). */
+  readonly runtime?: McpRuntimeFactory;
 }
 
 export function createServer(options: CreateServerOptions = {}): Server {
   registerBuiltinTools();
 
+  const cwd = options.cwd ?? process.cwd();
   const ctx: McpToolContext = {
-    cwd: options.cwd ?? process.cwd(),
+    cwd,
+    runtime: options.runtime ?? createMcpRuntimeFactory({ cwd }),
   };
 
   const server = new Server(

@@ -4,7 +4,7 @@ import { getSchemaVersion, openDatabase } from '../../src/storage/sqlite.js';
 describe('storage / sqlite', () => {
   it('opens an in-memory database and applies the schema', () => {
     const db = openDatabase({ path: ':memory:', memory: true });
-    expect(getSchemaVersion(db)).toBe('1');
+    expect(getSchemaVersion(db)).toBe('2');
     db.close();
   });
 
@@ -20,6 +20,8 @@ describe('storage / sqlite', () => {
     expect(names).toContain('commit_cluster_members');
     expect(names).toContain('llm_calls');
     expect(names).toContain('schema_meta');
+    expect(names).toContain('commit_embeddings');
+    expect(names).toContain('cluster_embeddings');
     db.close();
   });
 });

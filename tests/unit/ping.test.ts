@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { pingTool } from '../../src/mcp/tools/ping.js';
+import { nullRuntimeFactory } from '../fixtures/null-runtime.js';
+
+const ctx = { cwd: process.cwd(), runtime: nullRuntimeFactory };
 
 describe('gitwhy.ping tool', () => {
   it('returns a pong response with no input', async () => {
-    const result = await pingTool.handler({}, { cwd: process.cwd() });
+    const result = await pingTool.handler({}, ctx);
     expect(result.isError).toBeUndefined();
     expect(result.content).toHaveLength(1);
     expect(result.content[0]?.text).toContain('pong from gitwhy');
   });
 
   it('echoes a message when provided', async () => {
-    const result = await pingTool.handler(
-      { message: 'hello' },
-      { cwd: process.cwd() },
-    );
+    const result = await pingTool.handler({ message: 'hello' }, ctx);
     expect(result.content[0]?.text).toContain('echo: hello');
   });
 

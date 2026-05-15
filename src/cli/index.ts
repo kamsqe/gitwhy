@@ -3,6 +3,7 @@ import { Command } from 'commander';
 import { runEstimate } from './commands/estimate.js';
 import { runIndexCommand } from './commands/index-command.js';
 import { runInit } from './commands/init.js';
+import { runWhyCommand } from './commands/why.js';
 import { logger } from '../utils/logger.js';
 
 const program = new Command();
@@ -74,6 +75,44 @@ program
       ...(opts.model !== undefined && { model: opts.model }),
       ...(opts.budget !== undefined && { budgetUsd: opts.budget }),
     });
+  });
+
+program
+  .command('why <question...>')
+  .description('Ask a question about the indexed git history')
+  .option('-k, --top-k <n>', 'commits to retrieve for context (default 5)', (v) => parseInt(v, 10))
+  .option('--min-confidence <n>', 'min cosine similarity to attempt synthesis (default 0.4)', parseFloat)
+  .action(async (questionParts: string[], opts: { topK?: number; minConfidence?: number }) => {
+    const question = questionParts.join(' ').trim();
+    if (!question) throw new Error('Provide a question, e.g. `gitwhy why "..."`');
+
+    const result = await runWhyCommand({
+      cwd: process.cwd(),
+      question,
+      ...(opts.topK !== undefined && { topK: opts.topK }),
+      ...(opts.minConfidence !== undefined && { minConfidence: opts.minConfidence }),
+    });
+
+    process.stdout.write(`\n${result.answer}\n\n`);
+    if (result.citations.length > 0) {
+      process.stdout.write('Citations:\n');
+      for (const c of result.citations) {
+        const date = c.date.toISOString().slice(0, 10);
+        process.stdout.write(
+          `  [${c.shortHash}] ${date} by ${c.authorName}  (similarity: ${c.score.toFixed(2)})\n`,
+        );
+        if (c.enrichedSummary) {
+          process.stdout.write(`    ${c.enrichedSummary}\n`);
+        }
+      }
+      process.stdout.write('\n');
+    }
+    process.stdout.write(
+      `Confidence: ${(result.confidence * 100).toFixed(0)}%  retrieved ${result.retrieved} commits${result.cached ? ', cached' : ''}\n`,
+    );
+    if (result.idk) {
+      process.stdout.write('Result flagged as low-confidence ("I don\'t know" mode).\n');
+    }
   });
 
 program

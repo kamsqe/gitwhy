@@ -7,6 +7,7 @@ import {
   upsertCommit,
 } from '../storage/commits-repo.js';
 import { getIndexedHashes } from '../storage/commits-repo.js';
+import { upsertCommitEmbedding } from '../storage/embeddings-repo.js';
 import { categorize as runCategorize } from './categorizers/registry.js';
 import { registerBuiltinCategorizers } from './categorizers/builtin.js';
 import { clusterCommits } from './commit-clusterer.js';
@@ -38,6 +39,8 @@ export interface IndexerOptions {
   readonly skipEnrichmentForCategories?: readonly CommitCategory[];
   /** Override the model used for enrichment (defaults to config.provider.indexingModel). */
   readonly enrichmentModel?: string;
+  /** When true, skip generating embeddings for enriched summaries. Default false. */
+  readonly skipEmbeddings?: boolean;
 }
 
 export interface IndexResult {
@@ -96,6 +99,14 @@ export async function indexRepo(options: IndexerOptions): Promise<IndexResult> {
     let enrichedSummary: string | undefined;
     let enrichmentModelUsed: string | undefined;
 
+    // Insert the commit row early so any subsequent llm_calls FK to a valid
+    // commit hash. We'll re-upsert later with the enriched summary.
+    upsertCommit(db, {
+      commit,
+      category: effectiveCategory,
+      categoryReason: effectiveReason,
+    });
+
     if (effectiveCategory === 'micro') {
       microCommits.push(commit);
     } else if (!skipEnrich.has(effectiveCategory)) {
@@ -131,6 +142,7 @@ export async function indexRepo(options: IndexerOptions): Promise<IndexResult> {
               analysis.usage.promptTokens,
               analysis.usage.completionTokens,
             ),
+            relatedCommit: commit.hash,
           });
         }
       } catch {
@@ -140,6 +152,7 @@ export async function indexRepo(options: IndexerOptions): Promise<IndexResult> {
 
     categoryByHash.set(commit.hash, effectiveCategory);
 
+    // Re-upsert with enrichment results (COALESCE preserves non-null values).
     upsertCommit(db, {
       commit,
       category: effectiveCategory,
@@ -147,6 +160,35 @@ export async function indexRepo(options: IndexerOptions): Promise<IndexResult> {
       ...(enrichedSummary !== undefined && { enrichedSummary }),
       ...(enrichmentModelUsed !== undefined && { enrichmentModel: enrichmentModelUsed }),
     });
+
+    if (enrichedSummary !== undefined && options.skipEmbeddings !== true) {
+      try {
+        const embedResult = await llm.embed({
+          input: enrichedSummary,
+          model: config.provider.embeddingModel,
+        });
+        const vec = embedResult.embeddings[0];
+        if (vec !== undefined) {
+          upsertCommitEmbedding(db, {
+            commitHash: commit.hash,
+            embedding: vec,
+            model: embedResult.model,
+          });
+        }
+        progress.promptTokens += embedResult.usage.promptTokens;
+        recordLlmCall(db, {
+          provider: llm.name,
+          model: embedResult.model,
+          purpose: 'embed_commit',
+          promptTokens: embedResult.usage.promptTokens,
+          completionTokens: 0,
+          costUsd: estimateCostUsd(embedResult.model, embedResult.usage.promptTokens, 0),
+          relatedCommit: commit.hash,
+        });
+      } catch {
+        progress.errors++;
+      }
+    }
 
     if (enrichedSummary !== undefined && enrichmentModelUsed !== undefined) {
       const recentCost = estimateCostUsd(enrichmentModelUsed, 0, 0);
