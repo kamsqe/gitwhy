@@ -4,7 +4,11 @@ import { runEstimate } from './commands/estimate.js';
 import { runIndexCommand } from './commands/index-command.js';
 import { runInit } from './commands/init.js';
 import { runWhyCommand } from './commands/why.js';
+import { loadDotEnv } from '../utils/env.js';
 import { logger } from '../utils/logger.js';
+
+// Pick up OPENAI_API_KEY / GEMINI_API_KEY / etc. from a local .env on Node 20.12+.
+loadDotEnv(process.cwd());
 
 const program = new Command();
 
@@ -65,10 +69,10 @@ program
 program
   .command('index')
   .description('Index the repository: parse commits, enrich with AI, store in .gitwhy/')
-  .option('--provider <name>', 'LLM provider (openai|mock)', 'openai')
+  .option('--provider <name>', 'LLM provider (openai|gemini|mock); auto-detected from env if omitted')
   .option('--model <name>', 'override the enrichment model')
   .option('--budget <usd>', 'stop indexing if cost exceeds this many USD', parseFloat)
-  .action(async (opts: { provider?: 'openai' | 'mock'; model?: string; budget?: number }) => {
+  .action(async (opts: { provider?: 'openai' | 'gemini' | 'mock'; model?: string; budget?: number }) => {
     await runIndexCommand({
       cwd: process.cwd(),
       ...(opts.provider !== undefined && { provider: opts.provider }),

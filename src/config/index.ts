@@ -38,3 +38,26 @@ export const defaultConfig: GitWhyConfig = {
     vectorBackend: 'sqlite-vec',
   },
 };
+
+export const geminiDefaultConfig: GitWhyConfig = {
+  ...defaultConfig,
+  provider: {
+    llm: 'gemini',
+    indexingModel: 'gemini-2.5-flash',
+    queryModel: 'gemini-2.5-flash',
+    embeddingModel: 'gemini-embedding-001',
+  },
+};
+
+/**
+ * Pick the default config that matches whatever LLM credentials the user
+ * appears to have. Used by `gitwhy init` so users don't have to hand-edit
+ * config.json for their chosen provider. Lookups are case-insensitive.
+ */
+export function detectDefaultConfig(env: NodeJS.ProcessEnv = process.env): GitWhyConfig {
+  const lookup = (name: string): string | undefined =>
+    env[name] ?? env[name.toLowerCase()];
+  if (lookup('OPENAI_API_KEY')) return defaultConfig;
+  if (lookup('GEMINI_API_KEY') ?? lookup('GOOGLE_API_KEY')) return geminiDefaultConfig;
+  return defaultConfig;
+}

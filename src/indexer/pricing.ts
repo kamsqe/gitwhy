@@ -15,6 +15,10 @@ const KNOWN_MODELS: Record<string, ModelPricing> = {
   'gpt-4-turbo': { promptPerMillion: 10, completionPerMillion: 30 },
   'text-embedding-3-small': { promptPerMillion: 0.02, completionPerMillion: 0 },
   'text-embedding-3-large': { promptPerMillion: 0.13, completionPerMillion: 0 },
+  'gemini-2.5-flash': { promptPerMillion: 0.3, completionPerMillion: 2.5 },
+  'gemini-2.5-pro': { promptPerMillion: 1.25, completionPerMillion: 10 },
+  'gemini-2.0-flash': { promptPerMillion: 0.1, completionPerMillion: 0.4 },
+  'gemini-embedding-001': { promptPerMillion: 0.15, completionPerMillion: 0 },
   mock: { promptPerMillion: 0, completionPerMillion: 0 },
 };
 

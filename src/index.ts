@@ -62,6 +62,7 @@ export type {
 export { createSqliteBlobVectorStore, cosineSimilarity } from './providers/vector/sqlite-blob.js';
 export { createMockLlmProvider } from './providers/llm/mock.js';
 export { createOpenAiProvider } from './providers/llm/openai.js';
+export { createGeminiProvider } from './providers/llm/gemini.js';
 export type { MockLlmProvider } from './providers/llm/mock.js';
 
 export { indexRepo } from './indexer/indexer.js';

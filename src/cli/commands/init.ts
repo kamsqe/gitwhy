@@ -1,8 +1,9 @@
 import { existsSync } from 'node:fs';
-import { defaultConfig } from '../../config/index.js';
+import { detectDefaultConfig } from '../../config/index.js';
 import { ensureDirs, resolvePaths, writeConfig } from '../../config/loader.js';
 import { createGitReader } from '../../indexer/git-reader.js';
 import { openDatabase } from '../../storage/sqlite.js';
+import { loadDotEnv } from '../../utils/env.js';
 
 export interface InitOptions {
   readonly cwd: string;
@@ -25,6 +26,8 @@ export async function runInit(options: InitOptions): Promise<InitResult> {
   const cwd = options.cwd;
   const paths = resolvePaths(cwd);
   const warnings: string[] = [];
+
+  loadDotEnv(cwd);
 
   if (existsSync(paths.configFile) && !options.force) {
     const reader = createGitReader({ cwd });
@@ -53,8 +56,13 @@ export async function runInit(options: InitOptions): Promise<InitResult> {
     warnings.push('Git repository is a shallow clone. Run `git fetch --unshallow` to index full history.');
   }
 
-  ensureDirs(cwd, defaultConfig);
-  writeConfig(cwd, defaultConfig);
+  const chosenConfig = detectDefaultConfig();
+  if (chosenConfig.provider.llm !== 'openai') {
+    warnings.push(`Defaulting config to LLM provider "${chosenConfig.provider.llm}" based on detected API keys.`);
+  }
+
+  ensureDirs(cwd, chosenConfig);
+  writeConfig(cwd, chosenConfig);
 
   const db = openDatabase({ path: paths.commitsDb });
   db.close();

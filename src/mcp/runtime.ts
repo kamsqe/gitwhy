@@ -4,11 +4,13 @@ import { createKnowledgeAgent } from '../agents/knowledge/index.js';
 import type { KnowledgeAgent } from '../agents/knowledge/index.js';
 import type { GitWhyConfig } from '../config/index.js';
 import { loadConfig, resolvePaths } from '../config/loader.js';
+import { createGeminiProvider } from '../providers/llm/gemini.js';
 import { createMockLlmProvider } from '../providers/llm/mock.js';
 import { createOpenAiProvider } from '../providers/llm/openai.js';
 import type { LlmProvider } from '../providers/llm/types.js';
 import { createSqliteBlobVectorStore } from '../providers/vector/sqlite-blob.js';
 import type { VectorStore } from '../providers/vector/types.js';
+import { loadDotEnv } from '../utils/env.js';
 import { openDatabase } from '../storage/sqlite.js';
 
 export interface McpRuntime {
@@ -44,6 +46,8 @@ export function createMcpRuntimeFactory(options: CreateRuntimeOptions): McpRunti
     get(): McpRuntime {
       if (cached) return cached;
 
+      loadDotEnv(options.cwd);
+
       const paths = resolvePaths(options.cwd);
       if (!existsSync(paths.commitsDb)) {
         throw new Error(
@@ -73,15 +77,55 @@ export function createMcpRuntimeFactory(options: CreateRuntimeOptions): McpRunti
   };
 }
 
-function resolveLlmFromEnv(_config: GitWhyConfig): LlmProvider {
-  if (process.env['GITWHY_USE_MOCK_LLM'] === '1') {
+/**
+ * Resolve an LLM provider from environment. Precedence:
+ *   1. GITWHY_USE_MOCK_LLM=1  → mock provider (no network)
+ *   2. GITWHY_LLM_PROVIDER=<name> + matching API key
+ *   3. Auto: OPENAI_API_KEY → openai
+ *   4. Auto: GEMINI_API_KEY → gemini
+ *   5. Throw with a helpful message.
+ *
+ * Env-var lookups are case-insensitive so users with either UPPER_CASE
+ * (Unix convention) or lowercase .env files Just Work.
+ */
+export function resolveLlmFromEnv(_config: GitWhyConfig): LlmProvider {
+  if (envVar('GITWHY_USE_MOCK_LLM') === '1') {
     return createMockLlmProvider();
   }
-  const apiKey = process.env['OPENAI_API_KEY'];
-  if (!apiKey) {
-    throw new Error(
-      'No LLM credentials. Set OPENAI_API_KEY, or set GITWHY_USE_MOCK_LLM=1 for testing.',
-    );
+
+  const explicit = envVar('GITWHY_LLM_PROVIDER')?.toLowerCase();
+  if (explicit === 'openai') {
+    const key = envVar('OPENAI_API_KEY');
+    if (!key) throw new Error('GITWHY_LLM_PROVIDER=openai but OPENAI_API_KEY is not set.');
+    return createOpenAiProvider({ apiKey: key });
   }
-  return createOpenAiProvider({ apiKey });
+  if (explicit === 'gemini') {
+    const key = envVar('GEMINI_API_KEY') ?? envVar('GOOGLE_API_KEY');
+    if (!key) {
+      throw new Error('GITWHY_LLM_PROVIDER=gemini but GEMINI_API_KEY is not set.');
+    }
+    return createGeminiProvider({ apiKey: key });
+  }
+  if (explicit === 'mock') {
+    return createMockLlmProvider();
+  }
+
+  const openAiKey = envVar('OPENAI_API_KEY');
+  if (openAiKey) return createOpenAiProvider({ apiKey: openAiKey });
+
+  const geminiKey = envVar('GEMINI_API_KEY') ?? envVar('GOOGLE_API_KEY');
+  if (geminiKey) return createGeminiProvider({ apiKey: geminiKey });
+
+  throw new Error(
+    'No LLM credentials. Set OPENAI_API_KEY or GEMINI_API_KEY in your environment ' +
+      '(or in a .env file at the repo root), or use GITWHY_USE_MOCK_LLM=1 for testing.',
+  );
+}
+
+/**
+ * Case-insensitive env var lookup. Tries UPPER first (Unix convention),
+ * then lowercase as a fallback.
+ */
+function envVar(name: string): string | undefined {
+  return process.env[name] ?? process.env[name.toLowerCase()];
 }
