@@ -1,0 +1,33 @@
+:root {
+  --sl-color-accent-low: #1a3a5c;
+  --sl-color-accent: #2a6fc9;
+  --sl-color-accent-high: #6fa8e8;
+}
+
+[data-theme='light'] {
+  --sl-color-accent-low: #cfdfee;
+  --sl-color-accent: #2a6fc9;
+  --sl-color-accent-high: #163a6e;
+}
+
+.hero {
+  padding: 2rem 0;
+}
+
+.hero h1 {
+  font-size: 2.5rem;
+  line-height: 1.1;
+}
+
+.hero-tagline {
+  font-size: 1.25rem;
+  color: var(--sl-color-gray-3);
+  margin-top: 0.5rem;
+}
+
+.hero-cta {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}

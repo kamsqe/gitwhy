@@ -1,0 +1,102 @@
+---
+title: Live demo report
+description: A pre-generated GitWhy report showing what indexing the gitwhy repository itself produces.
+---
+
+This page shows what `gitwhy index && gitwhy status && gitwhy risk` looks like when run against the gitwhy repository's own history. It's the same data your editor would see through the MCP tools.
+
+The capstone demo video walks through this report live; the static snapshot here serves both as a fallback for readers without an MCP-capable editor and as proof that the pipeline produces sensible output on real code.
+
+## What was indexed
+
+```sh
+$ gitwhy init
+✓ initialized gitwhy at .gitwhy
+  commits in repo: 5
+
+$ gitwhy estimate
+Estimate for 5 commits (model: gemini-2.5-flash)
+Category       Count   LLM calls   Tokens (prompt/completion)   Est. cost
+-------------------------------------------------------------------------
+mega           4       16          92800/640                    $0.0294
+initial        1       0           0/0                          $0.0000
+-------------------------------------------------------------------------
+TOTAL          5       16          92800/640                    $0.0294
+
+$ gitwhy index
+indexed 5/5 (enriched=4, skipped=0, errors=0, est. $0.0277)
+done in 41s — processed 5, enriched 4, errors 0, cost $0.0277
+```
+
+## Index status
+
+```sh
+$ gitwhy status
+Indexed: 5/5 commits  (100% coverage)
+Embeddings: 4
+LLM usage: 34 calls, 91038+180 tokens, $0.0277
+Last indexed: 2026-05-15T08:43:04.340Z
+DB size: 156 KB
+
+Top hotspots (last 30 days):
+  src/cli/index.ts  (5 commits)
+  src/index.ts  (4 commits)
+  package.json  (3 commits)
+  pnpm-lock.yaml  (3 commits)
+  src/mcp/runtime.ts  (3 commits)
+```
+
+## Risk assessment for a single file
+
+```sh
+$ gitwhy risk src/indexer/indexer.ts
+
+MEDIUM risk (score 0.42)  —  src/indexer/indexer.ts
+
+Reasons:
+  • bus factor = 1 (kambar owns 100% of the file)
+  • only one contributor in indexed history
+
+Stats: bus factor 1, 1 contributors, 2 commits, 2 in last 90 days.
+
+Top contributors:
+  kambar                    100%  2 commits, last 2026-05-15
+```
+
+This is the canonical capstone-demo example: GitWhy correctly identifies that `src/indexer/indexer.ts` has a single contributor (solo project) and flags this as MEDIUM-risk because bus-factor-of-1 means a single point of failure for the file's institutional knowledge.
+
+## Co-changing files
+
+```sh
+$ gitwhy related src/indexer/indexer.ts --min 1
+
+Files that change with "src/indexer/indexer.ts":
+  src/cli/index.ts                                   2/2 commits  (100%)
+  tests/unit/storage.test.ts                         1/2 commits  (50%)
+  tests/unit/sqlite-blob-vector-store.test.ts        1/2 commits  (50%)
+  tests/unit/secret-detection.test.ts                1/2 commits  (50%)
+  tests/unit/ping.test.ts                            1/2 commits  (50%)
+```
+
+The 100% forward-confidence on `src/cli/index.ts` is meaningful: every commit that touched the indexer also touched the CLI entry. If you change the indexer's behavior, expect to update the CLI too.
+
+## MCP-doctor diagnostic
+
+```sh
+$ gitwhy mcp-doctor --no-probe
+✓ .gitwhy/ initialized
+✓ Config valid (provider=gemini, indexingModel=gemini-2.5-flash, ...)
+✓ Index populated (5 commits, 4 embeddings)
+✓ MCP tools registered (9 tools: gitwhy.ping, gitwhy.why, gitwhy.history,
+  gitwhy.search, gitwhy.catchup, gitwhy.risk, gitwhy.related,
+  gitwhy.context_for_pr, gitwhy.suggest_commit_message)
+✓ LLM credentials (provider=mock)
+
+Summary: 5 ok, 0 warn, 0 fail.
+```
+
+## What's not shown here
+
+- **The MCP-native split-screen demo** (the headline moment) — that's in the video; see the README for the link once recorded.
+- **A larger demo repo** — running gitwhy against `tj/commander.js` or a similar mid-size OSS repo produces a much richer report. That bundle is being prepared as part of the OSS launch.
+- **Real LLM cost numbers** — the report above used Gemini's free tier; numbers will differ for paid OpenAI / Gemini tiers.

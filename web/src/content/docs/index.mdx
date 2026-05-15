@@ -1,0 +1,67 @@
+---
+title: GitWhy
+description: Persistent memory for AI coding agents over your git history.
+template: splash
+hero:
+  tagline: Persistent memory for AI coding agents over your git history. Indexed once, exposed over MCP — so your editor's AI agent answers "why does this exist?" instantly, with citations.
+  actions:
+    - text: Quick start
+      link: /gitwhy/quickstart/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/kamsqe/gitwhy
+      icon: external
+      variant: secondary
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## The pitch in one paragraph
+
+Every developer wastes hours re-deriving why a codebase looks the way it does. The answers live in git history, but commit messages are usually unhelpful (`fix`, `wip`, `major update`) and on-demand AI editors re-pay the analysis cost every session. GitWhy indexes your repository's history once, uses an LLM to reverse-engineer intent from actual code diffs, and exposes the result over MCP — so any compatible editor (Cursor, Claude Code, Windsurf) gets fast, citation-backed historical context as a native tool call.
+
+## What's inside
+
+<CardGrid>
+  <Card title="3-agent architecture" icon="puzzle">
+    Archaeologist (indexes + enriches), Knowledge (RAG + citations), Insight (SQL analytics).
+    Explicit inter-agent communication via SQLite — testable, persistent, team-shareable.
+  </Card>
+  <Card title="9 MCP tools" icon="rocket">
+    `gitwhy.why`, `gitwhy.history`, `gitwhy.risk`, `gitwhy.related`, `gitwhy.context_for_pr`,
+    `gitwhy.catchup`, `gitwhy.search`, `gitwhy.suggest_commit_message`, `gitwhy.ping`.
+  </Card>
+  <Card title="Multi-provider LLM" icon="setting">
+    OpenAI (gpt-4o, gpt-4o-mini), Google Gemini (2.5-flash + gemini-embedding-001),
+    deterministic mock for tests. Auto-detected from env vars.
+  </Card>
+  <Card title="Adversarial-tested" icon="approve-check">
+    280+ tests across 33 files. Dedicated suite for prompt injection, secrets in diffs,
+    unicode hazards, SQL-injection-shaped inputs, concurrent queries.
+  </Card>
+</CardGrid>
+
+## How it compares
+
+| Tool | What it does | What GitWhy adds |
+|---|---|---|
+| `git log -p` + naked AI editor | Explains a diff on demand | Pre-indexed, persistent, citation-backed; 100× faster per query, no re-analysis cost |
+| Repowise / CodeScene | Static git analytics (hotspots, ownership) | AI-inferred *intent* from diffs, not just metrics; MCP-native; conversational Q&A |
+| Lore Protocol | Improves *future* commit message hygiene | Understands *existing* messy history retroactively |
+
+## Capstone submission
+
+GitWhy was built as a capstone for the EPAM Generative AI for Software Development program. The deliverables — architecture blueprint, executive summary, self-review — are rendered as proper pages here rather than left as raw Markdown.
+
+<CardGrid>
+  <Card title="Executive Summary" icon="document">
+    [Business value, audience, status & roadmap](/gitwhy/docs/executive-summary/)
+  </Card>
+  <Card title="Architecture Blueprint" icon="seti:graphql">
+    [System design, Mermaid diagrams, tech stack rationale](/gitwhy/docs/architecture/)
+  </Card>
+  <Card title="Self-Review" icon="pen">
+    [The five biggest trade-offs, what I'd revisit](/gitwhy/docs/self-review/)
+  </Card>
+</CardGrid>

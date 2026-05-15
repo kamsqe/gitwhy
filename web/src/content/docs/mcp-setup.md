@@ -1,0 +1,77 @@
+---
+title: MCP setup
+description: Wire GitWhy into Cursor, Claude Code, Windsurf, or any other MCP-compatible editor.
+---
+
+The MCP server is GitWhy's primary surface. Once it's connected, your editor's AI agent can call any of GitWhy's nine tools autonomously — you don't have to type "gitwhy" anywhere.
+
+## Connect to your editor
+
+Add this to your editor's MCP configuration (`mcp.json` or equivalent):
+
+```jsonc
+{
+  "mcpServers": {
+    "gitwhy": {
+      "command": "npx",
+      "args": ["gitwhy", "mcp"]
+    }
+  }
+}
+```
+
+For locations:
+
+| Editor | Config file |
+|---|---|
+| **Cursor** | `~/.cursor/mcp.json` |
+| **Claude Code** | `~/.claude/mcp.json` or workspace `.claude/mcp.json` |
+| **Windsurf** | Settings → MCP → "Add MCP server" |
+| **VS Code (continue.dev)** | `~/.continue/config.json` under `mcpServers` |
+
+Make sure the working directory the editor launches GitWhy from is the repository you've already indexed with `gitwhy init && gitwhy index`.
+
+## Verify the setup
+
+```sh
+gitwhy mcp-doctor
+```
+
+This runs five checks: `.gitwhy/` initialized, config parses, index is populated, MCP tools register with sufficient descriptions, and the configured LLM credentials probe successfully. Each check reports `ok`, `warn`, or `fail` with a one-line detail.
+
+Exit code is non-zero if any check fails — handy for CI gates.
+
+## Available MCP tools
+
+| Tool | When the agent should call it |
+|---|---|
+| `gitwhy.why` | User asks "why does X exist?", "why was Y changed?" |
+| `gitwhy.history` | User wants the timeline of a file or module |
+| `gitwhy.risk` | Before suggesting edits / during PR review |
+| `gitwhy.related` | User is about to edit a file |
+| `gitwhy.context_for_pr` | User is reviewing a PR |
+| `gitwhy.catchup` | "What happened while I was away?" |
+| `gitwhy.suggest_commit_message` | User has staged changes, asks for a message |
+| `gitwhy.search` | Generic fallback / "find commits matching X" |
+| `gitwhy.ping` | Health-check / debugging |
+
+Tool descriptions are intentionally verbose with example questions — they're load-bearing for agent auto-invocation. `gitwhy mcp-doctor` warns when any description is shorter than 120 characters (a heuristic that descriptions that short tend to not trigger reliably).
+
+## Observability
+
+Set `GITWHY_TRACE=1` in your environment before your editor launches the MCP server. Every tool call will be logged as one NDJSON event per line in `.gitwhy/traces/<session>.ndjson`, including duration and error details:
+
+```json
+{"timestamp":1734200000,"kind":"mcp_tool","durationMs":42,"data":{"tool":"gitwhy.why"}}
+```
+
+Useful for tuning tool descriptions, hunting slow queries, or just verifying that auto-invocation is happening.
+
+## Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `mcp-doctor` says "No DB at .gitwhy/index/commits.sqlite" | `gitwhy index` was never run | Run `gitwhy index` |
+| `mcp-doctor` says "No LLM credentials" | env vars not picked up by editor | Add `OPENAI_API_KEY` or `GEMINI_API_KEY` to your editor's environment (not just shell) |
+| Editor doesn't auto-invoke tools | Tool descriptions too vague for the agent, or wrong cwd | Run `gitwhy mcp-doctor` to verify tool descriptions; ensure editor launches GitWhy from the indexed repo |
+| All MCP responses say "I don't have enough information" | Index is empty or embeddings missing | `gitwhy status` will show coverage; rerun `gitwhy index` |

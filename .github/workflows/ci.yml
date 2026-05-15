@@ -43,5 +43,8 @@ jobs:
       - name: Test
         run: pnpm test
 
-      - name: Build
+      - name: Build (gitwhy package)
         run: pnpm build
+
+      - name: Build (web site)
+        run: pnpm --filter gitwhy-web build

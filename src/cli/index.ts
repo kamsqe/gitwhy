@@ -14,6 +14,7 @@ import { runRelatedCommand } from './commands/related.js';
 import { runRiskCommand } from './commands/risk.js';
 import { runStatusCommand } from './commands/status.js';
 import { runWhyCommand } from './commands/why.js';
+import { c } from '../utils/colors.js';
 import { loadDotEnv } from '../utils/env.js';
 import { logger } from '../utils/logger.js';
 
@@ -46,13 +47,13 @@ program
       ...(opts.force !== undefined && { force: opts.force }),
     });
     if (result.created) {
-      process.stdout.write(`✓ initialized gitwhy at ${result.path}\n`);
+      process.stdout.write(`${c.ok('✓')} initialized gitwhy at ${c.dim(result.path)}\n`);
     } else {
-      process.stdout.write(`gitwhy already initialized at ${result.path}\n`);
+      process.stdout.write(`gitwhy already initialized at ${c.dim(result.path)}\n`);
     }
-    process.stdout.write(`  commits in repo: ${result.diagnostics.totalCommits}\n`);
+    process.stdout.write(`  commits in repo: ${c.bold(String(result.diagnostics.totalCommits))}\n`);
     for (const w of result.warnings) {
-      process.stdout.write(`  ⚠ ${w}\n`);
+      process.stdout.write(`  ${c.warn('⚠')} ${w}\n`);
     }
   });
 
@@ -61,18 +62,18 @@ program
   .description('Dry-run cost estimation for indexing the current repo')
   .action(async () => {
     const result = await runEstimate({ cwd: process.cwd() });
-    process.stdout.write(`\nEstimate for ${result.totalCommits} commits (model: ${result.enrichmentModel})\n\n`);
-    process.stdout.write('Category       Count   LLM calls   Tokens (prompt/completion)   Est. cost\n');
-    process.stdout.write('-'.repeat(85) + '\n');
-    for (const c of result.byCategory) {
-      const tokens = `${c.estimatedPromptTokens}/${c.estimatedCompletionTokens}`;
+    process.stdout.write(`\n${c.bold('Estimate for')} ${result.totalCommits} commits ${c.dim(`(model: ${result.enrichmentModel})`)}\n\n`);
+    process.stdout.write(c.bold('Category       Count   LLM calls   Tokens (prompt/completion)   Est. cost\n'));
+    process.stdout.write(c.dim('-'.repeat(85)) + '\n');
+    for (const row of result.byCategory) {
+      const tokens = `${row.estimatedPromptTokens}/${row.estimatedCompletionTokens}`;
       process.stdout.write(
-        `${c.category.padEnd(15)}${String(c.count).padEnd(8)}${String(c.llmCallsPlanned).padEnd(12)}${tokens.padEnd(29)}$${c.estimatedUsd.toFixed(4)}\n`,
+        `${row.category.padEnd(15)}${String(row.count).padEnd(8)}${String(row.llmCallsPlanned).padEnd(12)}${tokens.padEnd(29)}$${row.estimatedUsd.toFixed(4)}\n`,
       );
     }
-    process.stdout.write('-'.repeat(85) + '\n');
+    process.stdout.write(c.dim('-'.repeat(85)) + '\n');
     process.stdout.write(
-      `${'TOTAL'.padEnd(15)}${String(result.totalCommits).padEnd(8)}${String(result.grandTotal.llmCallsPlanned).padEnd(12)}${`${result.grandTotal.promptTokens}/${result.grandTotal.completionTokens}`.padEnd(29)}$${result.grandTotal.usd.toFixed(4)}\n`,
+      `${c.bold('TOTAL'.padEnd(15))}${String(result.totalCommits).padEnd(8)}${String(result.grandTotal.llmCallsPlanned).padEnd(12)}${`${result.grandTotal.promptTokens}/${result.grandTotal.completionTokens}`.padEnd(29)}${c.bold(`$${result.grandTotal.usd.toFixed(4)}`)}\n`,
     );
   });
 
@@ -109,23 +110,30 @@ program
 
     process.stdout.write(`\n${result.answer}\n\n`);
     if (result.citations.length > 0) {
-      process.stdout.write('Citations:\n');
-      for (const c of result.citations) {
-        const date = c.date.toISOString().slice(0, 10);
+      process.stdout.write(`${c.bold('Citations:')}\n`);
+      for (const cit of result.citations) {
+        const date = cit.date.toISOString().slice(0, 10);
         process.stdout.write(
-          `  [${c.shortHash}] ${date} by ${c.authorName}  (similarity: ${c.score.toFixed(2)})\n`,
+          `  ${c.cyan(`[${cit.shortHash}]`)} ${c.dim(date)} by ${cit.authorName}  ${c.dim(`(similarity: ${cit.score.toFixed(2)})`)}\n`,
         );
-        if (c.enrichedSummary) {
-          process.stdout.write(`    ${c.enrichedSummary}\n`);
+        if (cit.enrichedSummary) {
+          process.stdout.write(`    ${cit.enrichedSummary}\n`);
         }
       }
       process.stdout.write('\n');
     }
+    const confPct = (result.confidence * 100).toFixed(0);
+    const conf =
+      result.confidence >= 0.7
+        ? c.ok(`${confPct}%`)
+        : result.confidence >= 0.4
+          ? c.warn(`${confPct}%`)
+          : c.fail(`${confPct}%`);
     process.stdout.write(
-      `Confidence: ${(result.confidence * 100).toFixed(0)}%  retrieved ${result.retrieved} commits${result.cached ? ', cached' : ''}\n`,
+      `${c.bold('Confidence:')} ${conf}  retrieved ${result.retrieved} commits${result.cached ? c.dim(', cached') : ''}\n`,
     );
     if (result.idk) {
-      process.stdout.write('Result flagged as low-confidence ("I don\'t know" mode).\n');
+      process.stdout.write(`${c.warn('Result flagged as low-confidence ("I don\'t know" mode).')}\n`);
     }
   });
 
@@ -139,20 +147,20 @@ program
       return;
     }
     process.stdout.write(
-      `\n${risk.level.toUpperCase()} risk (score ${risk.score.toFixed(2)})  —  ${path}\n\n`,
+      `\n${c.riskLevel(risk.level)} risk ${c.dim(`(score ${risk.score.toFixed(2)})`)}  —  ${c.bold(path)}\n\n`,
     );
-    process.stdout.write('Reasons:\n');
+    process.stdout.write(`${c.bold('Reasons:')}\n`);
     for (const reason of risk.reasons) process.stdout.write(`  • ${reason}\n`);
     process.stdout.write(
-      `\nStats: bus factor ${risk.inputs.busFactor}, ${risk.inputs.contributorCount} contributors, ` +
+      `\n${c.dim('Stats:')} bus factor ${risk.inputs.busFactor}, ${risk.inputs.contributorCount} contributors, ` +
         `${risk.inputs.totalCommits} commits, ${risk.inputs.recentCommits90d} in last 90 days.\n`,
     );
     if (busFactor.contributors.length > 0) {
-      process.stdout.write('\nTop contributors:\n');
-      for (const c of busFactor.contributors.slice(0, 5)) {
-        const date = c.lastCommit.toISOString().slice(0, 10);
+      process.stdout.write(`\n${c.bold('Top contributors:')}\n`);
+      for (const contrib of busFactor.contributors.slice(0, 5)) {
+        const date = contrib.lastCommit.toISOString().slice(0, 10);
         process.stdout.write(
-          `  ${c.authorName.padEnd(25)} ${c.sharePercent.toFixed(0).padStart(3)}%  ${c.commits} commits, last ${date}\n`,
+          `  ${contrib.authorName.padEnd(25)} ${contrib.sharePercent.toFixed(0).padStart(3)}%  ${contrib.commits} commits, last ${c.dim(date)}\n`,
         );
       }
     }
@@ -213,30 +221,37 @@ program
   .action(async () => {
     const r = await runStatusCommand({ cwd: process.cwd() });
     if (!r.initialized) {
-      process.stdout.write('gitwhy is not initialized in this directory.\n');
-      for (const w of r.warnings) process.stdout.write(`  ⚠ ${w}\n`);
+      process.stdout.write(`${c.warn('gitwhy is not initialized in this directory.')}\n`);
+      for (const w of r.warnings) process.stdout.write(`  ${c.warn('⚠')} ${w}\n`);
       return;
     }
+    const coveragePct = (r.indexCoverage * 100).toFixed(0);
+    const coverage =
+      r.indexCoverage >= 0.95
+        ? c.ok(`${coveragePct}%`)
+        : r.indexCoverage >= 0.5
+          ? c.warn(`${coveragePct}%`)
+          : c.fail(`${coveragePct}%`);
     process.stdout.write(
-      `Indexed: ${r.indexedCommits}/${r.gitTotalCommits} commits  (${(r.indexCoverage * 100).toFixed(0)}% coverage)\n`,
+      `${c.bold('Indexed:')} ${r.indexedCommits}/${r.gitTotalCommits} commits  (${coverage} coverage)\n`,
     );
-    process.stdout.write(`Embeddings: ${r.embeddings}\n`);
+    process.stdout.write(`${c.bold('Embeddings:')} ${r.embeddings}\n`);
     process.stdout.write(
-      `LLM usage: ${r.llmCalls} calls, ${r.promptTokens}+${r.completionTokens} tokens, $${r.costUsd.toFixed(4)}\n`,
+      `${c.bold('LLM usage:')} ${r.llmCalls} calls, ${r.promptTokens}+${r.completionTokens} tokens, ${c.bold('$' + r.costUsd.toFixed(4))}\n`,
     );
     if (r.lastIndexedAt) {
-      process.stdout.write(`Last indexed: ${r.lastIndexedAt.toISOString()}\n`);
+      process.stdout.write(`${c.bold('Last indexed:')} ${c.dim(r.lastIndexedAt.toISOString())}\n`);
     }
-    process.stdout.write(`DB size: ${(r.dbSizeBytes / 1024).toFixed(0)} KB\n`);
+    process.stdout.write(`${c.bold('DB size:')} ${(r.dbSizeBytes / 1024).toFixed(0)} KB\n`);
     if (r.topHotspots.length > 0) {
-      process.stdout.write('\nTop hotspots (last 30 days):\n');
+      process.stdout.write(`\n${c.bold('Top hotspots (last 30 days):')}\n`);
       for (const h of r.topHotspots) {
-        process.stdout.write(`  ${h.path}  (${h.recentCommits} commits)\n`);
+        process.stdout.write(`  ${h.path}  ${c.dim(`(${h.recentCommits} commits)`)}\n`);
       }
     }
     if (r.warnings.length > 0) {
-      process.stdout.write('\nWarnings:\n');
-      for (const w of r.warnings) process.stdout.write(`  ⚠ ${w}\n`);
+      process.stdout.write(`\n${c.bold('Warnings:')}\n`);
+      for (const w of r.warnings) process.stdout.write(`  ${c.warn('⚠')} ${w}\n`);
     }
   });
 
@@ -250,12 +265,10 @@ program
       probeLlm: opts.probe !== false,
     });
     for (const check of r.checks) {
-      const icon = check.level === 'ok' ? '✓' : check.level === 'warn' ? '⚠' : '✗';
-      process.stdout.write(`${icon} ${check.title}\n    ${check.detail}\n`);
+      process.stdout.write(`${c.checkIcon(check.level)} ${c.bold(check.title)}\n    ${c.dim(check.detail)}\n`);
     }
-    process.stdout.write(
-      `\nSummary: ${r.summary.ok} ok, ${r.summary.warn} warn, ${r.summary.fail} fail.\n`,
-    );
+    const summary = `${c.ok(`${r.summary.ok} ok`)}, ${c.warn(`${r.summary.warn} warn`)}, ${c.fail(`${r.summary.fail} fail`)}`;
+    process.stdout.write(`\n${c.bold('Summary:')} ${summary}.\n`);
     if (r.summary.fail > 0) process.exitCode = 1;
   });
 
