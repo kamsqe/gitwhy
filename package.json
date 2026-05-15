@@ -1,0 +1,72 @@
+{
+  "name": "gitwhy",
+  "version": "0.0.1",
+  "description": "Persistent memory for AI coding agents over your git history.",
+  "keywords": [
+    "git",
+    "ai",
+    "mcp",
+    "rag",
+    "llm",
+    "code-archaeology",
+    "developer-tools"
+  ],
+  "license": "MIT",
+  "author": "Kambar Mirmanov",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kamsqe/gitwhy.git"
+  },
+  "homepage": "https://github.com/kamsqe/gitwhy",
+  "bugs": "https://github.com/kamsqe/gitwhy/issues",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "bin": {
+    "gitwhy": "./dist/cli/index.js"
+  },
+  "files": [
+    "dist",
+    "src/storage/schema.sql",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && mkdir -p dist/storage && cp src/storage/schema.sql dist/storage/schema.sql",
+    "dev": "tsx watch src/cli/index.ts",
+    "mcp": "tsx src/mcp/server.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "better-sqlite3": "^11.0.0",
+    "commander": "^12.0.0",
+    "simple-git": "^3.25.0",
+    "zod": "^3.23.0",
+    "zod-to-json-schema": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.10",
+    "@types/node": "^22.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.5.0",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^3.0.0"
+  }
+}

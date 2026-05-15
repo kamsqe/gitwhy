@@ -1,0 +1,82 @@
+#!/usr/bin/env node
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import { zodToJsonSchema } from 'zod-to-json-schema';
+import { registerBuiltinTools } from './tools/index.js';
+import { getTool, listTools } from './tools/registry.js';
+import type { McpToolContext } from './tools/types.js';
+
+export interface CreateServerOptions {
+  readonly cwd?: string;
+}
+
+export function createServer(options: CreateServerOptions = {}): Server {
+  registerBuiltinTools();
+
+  const ctx: McpToolContext = {
+    cwd: options.cwd ?? process.cwd(),
+  };
+
+  const server = new Server(
+    { name: 'gitwhy', version: '0.0.1' },
+    { capabilities: { tools: {} } },
+  );
+
+  server.setRequestHandler(ListToolsRequestSchema, () =>
+    Promise.resolve({
+      tools: listTools().map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        inputSchema: zodToJsonSchema(tool.inputSchema, { target: 'jsonSchema7' }) as Record<
+          string,
+          unknown
+        >,
+      })),
+    }),
+  );
+
+  server.setRequestHandler(CallToolRequestSchema, async (request): Promise<CallToolResult> => {
+    const tool = getTool(request.params.name);
+    if (!tool) {
+      return {
+        content: [{ type: 'text', text: `Unknown tool: ${request.params.name}` }],
+        isError: true,
+      };
+    }
+    const parsed = tool.inputSchema.safeParse(request.params.arguments ?? {});
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input for ${tool.name}: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+    const response = await tool.handler(parsed.data, ctx);
+    // McpToolResponse is a strict subset of CallToolResult (the SDK's union
+    // adds an index signature and an optional task-async branch we don't use).
+    return response as CallToolResult;
+  });
+
+  return server;
+}
+
+async function main(): Promise<void> {
+  const server = createServer();
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+}
+
+const invokedDirectly = process.argv[1] && import.meta.url === `file://${process.argv[1]}`;
+if (invokedDirectly) {
+  main().catch((err: unknown) => {
+    const message = err instanceof Error ? err.message : String(err);
+    process.stderr.write(`gitwhy MCP server failed: ${message}\n`);
+    process.exit(1);
+  });
+}
