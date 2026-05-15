@@ -60,8 +60,16 @@ program
 program
   .command('estimate')
   .description('Dry-run cost estimation for indexing the current repo')
-  .action(async () => {
-    const result = await runEstimate({ cwd: process.cwd() });
+  .option('--since <range>', 'limit to commits after this date / git range (e.g. "6 months ago")')
+  .option('--until <range>', 'limit to commits before this date')
+  .option('--max-count <n>', 'cap commits processed (newest first)', (v) => parseInt(v, 10))
+  .action(async (opts: { since?: string; until?: string; maxCount?: number }) => {
+    const result = await runEstimate({
+      cwd: process.cwd(),
+      ...(opts.since !== undefined && { since: opts.since }),
+      ...(opts.until !== undefined && { until: opts.until }),
+      ...(opts.maxCount !== undefined && { maxCount: opts.maxCount }),
+    });
     process.stdout.write(`\n${c.bold('Estimate for')} ${result.totalCommits} commits ${c.dim(`(model: ${result.enrichmentModel})`)}\n\n`);
     process.stdout.write(c.bold('Category       Count   LLM calls   Tokens (prompt/completion)   Est. cost\n'));
     process.stdout.write(c.dim('-'.repeat(85)) + '\n');
@@ -83,12 +91,18 @@ program
   .option('--provider <name>', 'LLM provider (openai|gemini|mock); auto-detected from env if omitted')
   .option('--model <name>', 'override the enrichment model')
   .option('--budget <usd>', 'stop indexing if cost exceeds this many USD', parseFloat)
-  .action(async (opts: { provider?: 'openai' | 'gemini' | 'mock'; model?: string; budget?: number }) => {
+  .option('--since <range>', 'limit to commits after this date / git range (e.g. "6 months ago")')
+  .option('--until <range>', 'limit to commits before this date')
+  .option('--max-count <n>', 'cap commits processed (newest first)', (v) => parseInt(v, 10))
+  .action(async (opts: { provider?: 'openai' | 'gemini' | 'mock'; model?: string; budget?: number; since?: string; until?: string; maxCount?: number }) => {
     await runIndexCommand({
       cwd: process.cwd(),
       ...(opts.provider !== undefined && { provider: opts.provider }),
       ...(opts.model !== undefined && { model: opts.model }),
       ...(opts.budget !== undefined && { budgetUsd: opts.budget }),
+      ...(opts.since !== undefined && { since: opts.since }),
+      ...(opts.until !== undefined && { until: opts.until }),
+      ...(opts.maxCount !== undefined && { maxCount: opts.maxCount }),
     });
   });
 

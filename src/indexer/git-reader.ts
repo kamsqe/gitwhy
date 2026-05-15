@@ -32,6 +32,42 @@ export function createGitReader(options: GitReaderOptions): GitReader {
   return new GitReaderImpl(git, options);
 }
 
+export interface ScopeFromConfig {
+  readonly since?: string;
+  readonly until?: string;
+  readonly branches?: readonly string[];
+  readonly pathInclude?: readonly string[];
+  readonly pathExclude?: readonly string[];
+}
+
+export interface ScopeOverrides {
+  readonly since?: string;
+  readonly until?: string;
+  readonly maxCount?: number;
+}
+
+/**
+ * Build GitReaderOptions by merging a cwd, a config.scope object, and
+ * optional CLI overrides. CLI overrides win over config; both are optional.
+ */
+export function gitReaderOptionsFromConfig(
+  cwd: string,
+  scope: ScopeFromConfig = {},
+  overrides: ScopeOverrides = {},
+): GitReaderOptions {
+  const since = overrides.since ?? scope.since;
+  const until = overrides.until ?? scope.until;
+  return {
+    cwd,
+    ...(since !== undefined && { since }),
+    ...(until !== undefined && { until }),
+    ...(overrides.maxCount !== undefined && { maxCount: overrides.maxCount }),
+    ...(scope.branches !== undefined && { branches: scope.branches }),
+    ...(scope.pathInclude !== undefined && { pathInclude: scope.pathInclude }),
+    ...(scope.pathExclude !== undefined && { pathExclude: scope.pathExclude }),
+  };
+}
+
 class GitReaderImpl implements GitReader {
   constructor(
     private readonly git: SimpleGit,

@@ -1,5 +1,5 @@
 import { loadConfig, resolvePaths } from '../../config/loader.js';
-import { createGitReader } from '../../indexer/git-reader.js';
+import { createGitReader, gitReaderOptionsFromConfig } from '../../indexer/git-reader.js';
 import { indexRepo } from '../../indexer/indexer.js';
 import type { IndexProgress, IndexResult } from '../../indexer/indexer.js';
 import { resolveLlmFromEnv } from '../../mcp/runtime.js';
@@ -15,6 +15,12 @@ export interface IndexCommandOptions {
   readonly provider?: 'openai' | 'gemini' | 'mock';
   readonly model?: string;
   readonly budgetUsd?: number;
+  /** Override config.scope.since (e.g. "6 months ago", "2024-01-01"). */
+  readonly since?: string;
+  /** Override config.scope.until. */
+  readonly until?: string;
+  /** Cap the number of commits processed (newest first). */
+  readonly maxCount?: number;
 }
 
 export async function runIndexCommand(options: IndexCommandOptions): Promise<IndexResult> {
@@ -22,7 +28,12 @@ export async function runIndexCommand(options: IndexCommandOptions): Promise<Ind
   const config = loadConfig(cwd);
   const paths = resolvePaths(cwd, config);
 
-  const reader = createGitReader({ cwd });
+  const readerOptions = gitReaderOptionsFromConfig(cwd, config.scope, {
+    ...(options.since !== undefined && { since: options.since }),
+    ...(options.until !== undefined && { until: options.until }),
+    ...(options.maxCount !== undefined && { maxCount: options.maxCount }),
+  });
+  const reader = createGitReader(readerOptions);
   const diag = await reader.diagnose();
   if (!diag.isGitRepo) {
     throw new Error('No git repository at this path. Run `git init` first.');
