@@ -43,8 +43,8 @@ export const geminiDefaultConfig: GitWhyConfig = {
   ...defaultConfig,
   provider: {
     llm: 'gemini',
-    indexingModel: 'gemini-2.5-flash',
-    queryModel: 'gemini-2.5-flash',
+    indexingModel: 'gemini-3-flash-preview',
+    queryModel: 'gemini-3-flash-preview',
     embeddingModel: 'gemini-embedding-001',
   },
 };

@@ -18,6 +18,13 @@ const KNOWN_MODELS: Record<string, ModelPricing> = {
   'gemini-2.5-flash': { promptPerMillion: 0.3, completionPerMillion: 2.5 },
   'gemini-2.5-pro': { promptPerMillion: 1.25, completionPerMillion: 10 },
   'gemini-2.0-flash': { promptPerMillion: 0.1, completionPerMillion: 0.4 },
+  'gemini-3-flash': { promptPerMillion: 0.5, completionPerMillion: 3.0 },
+  'gemini-3-flash-preview': { promptPerMillion: 0.5, completionPerMillion: 3.0 },
+  'gemini-3-pro-preview': { promptPerMillion: 1.25, completionPerMillion: 10.0 },
+  'gemini-3.1-flash-lite': { promptPerMillion: 0.25, completionPerMillion: 1.5 },
+  'gemini-3.1-flash-lite-preview': { promptPerMillion: 0.25, completionPerMillion: 1.5 },
+  'gemini-3.1-pro-preview': { promptPerMillion: 1.5, completionPerMillion: 12.0 },
+  'gemini-3.5-flash': { promptPerMillion: 1.5, completionPerMillion: 9.0 },
   'gemini-embedding-001': { promptPerMillion: 0.15, completionPerMillion: 0 },
   mock: { promptPerMillion: 0, completionPerMillion: 0 },
 };

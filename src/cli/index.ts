@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
+import { runCatchupCommand } from './commands/catchup.js';
 import { runCommitCommand } from './commands/commit.js';
 import { runEstimate } from './commands/estimate.js';
 import {
@@ -7,11 +8,13 @@ import {
   submitFeedback,
   summarizeFeedback,
 } from './commands/feedback.js';
+import { runHistoryCommand } from './commands/history.js';
 import { runIndexCommand } from './commands/index-command.js';
 import { runInit } from './commands/init.js';
 import { runMcpDoctor } from './commands/mcp-doctor.js';
 import { runRelatedCommand } from './commands/related.js';
 import { runRiskCommand } from './commands/risk.js';
+import { runSearchCommand } from './commands/search.js';
 import { runStatusCommand } from './commands/status.js';
 import { runWhyCommand } from './commands/why.js';
 import { c } from '../utils/colors.js';
@@ -178,6 +181,48 @@ program
         );
       }
     }
+  });
+
+program
+  .command('history <path>')
+  .description('Show the AI-enriched timeline of commits that touched a file or directory')
+  .option('-k, --limit <n>', 'max commits to return (default 20)', (v) => parseInt(v, 10))
+  .action(async (path: string, opts: { limit?: number }) => {
+    const text = await runHistoryCommand({
+      cwd: process.cwd(),
+      path,
+      ...(opts.limit !== undefined && { limit: opts.limit }),
+    });
+    process.stdout.write(`\n${text}\n`);
+  });
+
+program
+  .command('catchup')
+  .description('Narrated summary of recent activity (uses indexed enriched summaries; no LLM call)')
+  .requiredOption('-s, --since <range>', 'time window (ISO date or relative like "1 week ago")')
+  .option('-k, --limit <n>', 'max commits to consider (default 50)', (v) => parseInt(v, 10))
+  .action(async (opts: { since: string; limit?: number }) => {
+    const text = await runCatchupCommand({
+      cwd: process.cwd(),
+      since: opts.since,
+      ...(opts.limit !== undefined && { limit: opts.limit }),
+    });
+    process.stdout.write(`\n${text}\n`);
+  });
+
+program
+  .command('search <query...>')
+  .description('Semantic search over indexed commits (returns ranked hits with citations)')
+  .option('-k, --top-k <n>', 'max results (default 10)', (v) => parseInt(v, 10))
+  .action(async (queryParts: string[], opts: { topK?: number }) => {
+    const query = queryParts.join(' ').trim();
+    if (!query) throw new Error('Provide a query, e.g. `gitwhy search "..."`');
+    const text = await runSearchCommand({
+      cwd: process.cwd(),
+      query,
+      ...(opts.topK !== undefined && { topK: opts.topK }),
+    });
+    process.stdout.write(`\n${text}\n`);
   });
 
 program

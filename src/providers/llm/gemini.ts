@@ -24,7 +24,7 @@ export interface GeminiProviderOptions {
   readonly minRequestIntervalMs?: number;
 }
 
-const DEFAULT_MODEL = 'gemini-2.5-flash';
+const DEFAULT_MODEL = 'gemini-3-flash-preview';
 const DEFAULT_EMBEDDING_MODEL = 'gemini-embedding-001';
 const DEFAULT_MAX_RETRIES = 5;
 const DEFAULT_RETRY_BASE_DELAY_MS = 4000;
