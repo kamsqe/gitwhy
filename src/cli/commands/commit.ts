@@ -1,9 +1,17 @@
 import { execFileSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { simpleGit } from 'simple-git';
+import { loadConfig, resolvePaths } from '../../config/loader.js';
+import { detectDefaultConfig } from '../../config/index.js';
+import type { GitWhyConfig } from '../../config/index.js';
 import { estimateCostUsd } from '../../indexer/pricing.js';
 import { scanForSecrets } from '../../indexer/secret-detection.js';
-import { createMcpRuntimeFactory } from '../../mcp/runtime.js';
+import { resolveLlmFromEnv } from '../../mcp/runtime.js';
 import { recordLlmCall } from '../../storage/commits-repo.js';
+import { openDatabase } from '../../storage/sqlite.js';
+import type { Database as DatabaseType } from 'better-sqlite3';
+import type { LlmProvider } from '../../providers/llm/types.js';
+import { loadDotEnv } from '../../utils/env.js';
 import { logger } from '../../utils/logger.js';
 
 export interface CommitCommandOptions {
@@ -46,11 +54,37 @@ const SYSTEM_PROMPT_PLAIN = [
 
 const MAX_DIFF_CHARS = 12_000;
 
-export async function runCommitCommand(options: CommitCommandOptions): Promise<CommitCommandResult> {
-  const factory = createMcpRuntimeFactory({ cwd: options.cwd });
-  const runtime = factory.get();
-  const git = simpleGit({ baseDir: options.cwd });
+/**
+ * Load the gitwhy config if `.gitwhy/config.json` exists, otherwise pick
+ * a provider-appropriate default based on detected env vars. `gitwhy commit`
+ * only needs an LLM provider and the staged diff — it doesn't actually
+ * read the index — so forcing init for it is overly strict.
+ *
+ * Note: `loadConfig` silently returns `defaultConfig` (OpenAI-flavored) when
+ * the config file is missing, so we explicitly check for the file's
+ * existence to know whether to load it or to detect from env vars.
+ */
+function loadConfigIfInit(cwd: string): GitWhyConfig {
+  const paths = resolvePaths(cwd);
+  if (!existsSync(paths.configFile)) {
+    return detectDefaultConfig();
+  }
+  try {
+    return loadConfig(cwd);
+  } catch {
+    return detectDefaultConfig();
+  }
+}
 
+export async function runCommitCommand(options: CommitCommandOptions): Promise<CommitCommandResult> {
+  loadDotEnv(options.cwd);
+
+  const paths = resolvePaths(options.cwd);
+  const isInitialized = existsSync(paths.commitsDb);
+  const config = loadConfigIfInit(options.cwd);
+  const llm: LlmProvider = resolveLlmFromEnv(config);
+
+  const git = simpleGit({ baseDir: options.cwd });
   const stagedDiff = await git.diff(['--cached', '--no-color']);
   if (stagedDiff.trim().length === 0) {
     throw new Error('No staged changes. Run `git add <files>` first.');
@@ -70,28 +104,41 @@ export async function runCommitCommand(options: CommitCommandOptions): Promise<C
   const system = style === 'plain' ? SYSTEM_PROMPT_PLAIN : SYSTEM_PROMPT_CONVENTIONAL;
   const scopeHint = options.scope ? `\nPreferred scope: ${options.scope}` : '';
 
-  const completion = await runtime.llm.complete({
+  const completion = await llm.complete({
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: `Staged diff (between <<<>>>):\n<<<${processedDiff}>>>${scopeHint}` },
     ],
-    model: runtime.config.provider.indexingModel,
+    model: config.provider.indexingModel,
     maxTokens: 200,
     temperature: 0.3,
   });
 
-  recordLlmCall(runtime.db, {
-    provider: runtime.llm.name,
-    model: completion.model,
-    purpose: 'suggest_commit_message',
-    promptTokens: completion.usage.promptTokens,
-    completionTokens: completion.usage.completionTokens,
-    costUsd: estimateCostUsd(
-      completion.model,
-      completion.usage.promptTokens,
-      completion.usage.completionTokens,
-    ),
-  });
+  // Only record LLM accounting when gitwhy is initialized in this repo.
+  // Suggesting a commit message in a non-init'd repo should still work —
+  // the user just doesn't get a per-call entry in `llm_calls`.
+  if (isInitialized) {
+    let db: DatabaseType | null = null;
+    try {
+      db = openDatabase({ path: paths.commitsDb });
+      recordLlmCall(db, {
+        provider: llm.name,
+        model: completion.model,
+        purpose: 'suggest_commit_message',
+        promptTokens: completion.usage.promptTokens,
+        completionTokens: completion.usage.completionTokens,
+        costUsd: estimateCostUsd(
+          completion.model,
+          completion.usage.promptTokens,
+          completion.usage.completionTokens,
+        ),
+      });
+    } catch {
+      // Accounting is best-effort; never block the commit suggestion.
+    } finally {
+      db?.close();
+    }
+  }
 
   const message = completion.text.trim();
   let applied = false;
