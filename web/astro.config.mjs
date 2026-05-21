@@ -1,5 +1,7 @@
 import { defineConfig } from 'astro/config';
+import react from '@astrojs/react';
 import starlight from '@astrojs/starlight';
+import tailwindcss from '@tailwindcss/vite';
 
 // Site URL. Defaults to the Cloudflare Pages production URL; the deploy
 // workflow can override for preview environments or a custom domain.
@@ -9,6 +11,9 @@ const BASE = process.env.BASE_PATH ?? '/';
 export default defineConfig({
   site: SITE,
   base: BASE,
+  vite: {
+    plugins: [tailwindcss()],
+  },
   integrations: [
     starlight({
       title: 'GitWhy',
@@ -27,6 +32,7 @@ export default defineConfig({
             { label: 'What is GitWhy?', link: '/' },
             { label: 'Quick start', link: '/quickstart/' },
             { label: 'MCP setup', link: '/mcp-setup/' },
+            { label: 'Open the app →', link: '/app/' },
           ],
         },
         {
@@ -44,9 +50,10 @@ export default defineConfig({
           ],
         },
       ],
-      customCss: ['./src/assets/custom.css'],
+      customCss: ['./src/assets/custom.css', './src/assets/app.css'],
       lastUpdated: true,
       tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 3 },
     }),
+    react(),
   ],
 });

@@ -1,0 +1,29 @@
+---
+import '../assets/app.css';
+import { App } from '../components/app/App';
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GitWhy — App</title>
+    <meta
+      name="description"
+      content="Run GitWhy against your local repo through a browser UI. The page talks to your local gitwhy server — your repo data and API key never leave your machine."
+    />
+    <link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="robots" content="noindex" />
+  </head>
+  <body class="gw-app">
+    <App client:only="react" />
+    <noscript>
+      <div style="padding: 2rem; max-width: 600px; margin: 4rem auto; color: #e5e7eb; font-family: system-ui;">
+        <h1>JavaScript required</h1>
+        <p>This page is a single-page app that talks to a local <code>gitwhy</code> server running on your machine.</p>
+        <p>Enable JavaScript or use the CLI directly: <code>gitwhy why "..."</code></p>
+      </div>
+    </noscript>
+  </body>
+</html>
