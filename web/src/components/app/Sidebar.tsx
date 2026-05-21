@@ -52,6 +52,17 @@ export const TABS: Tab[] = [
   },
 ];
 
+// Secondary tabs — meta/info, not analysis tools. Separated visually so the
+// primary 7 tools stay focused.
+export const SECONDARY_TABS: Tab[] = [
+  {
+    id: 'status',
+    label: 'Status',
+    description: 'index health · hotspots',
+    icon: <Icon path="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />,
+  },
+];
+
 function Icon({ path }: { path: string }) {
   return (
     <svg
@@ -68,41 +79,77 @@ function Icon({ path }: { path: string }) {
   );
 }
 
-interface SidebarProps {
-  active: string;
-  onSelect: (id: string) => void;
-}
-
-export function Sidebar({ active, onSelect }: SidebarProps) {
+export function Sidebar({ active, onSelect, warningCount = 0 }: SidebarProps) {
   return (
     <nav className="w-56 shrink-0 border-r border-gw-border bg-gw-surface px-3 py-4">
       <p className="px-2 pb-2 text-[10px] uppercase tracking-wider text-gw-text-faint">Tools</p>
-      <ul className="space-y-0.5">
-        {TABS.map((tab) => {
-          const isActive = active === tab.id;
-          return (
-            <li key={tab.id}>
-              <button
-                type="button"
-                onClick={() => onSelect(tab.id)}
-                className={`flex w-full items-start gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors ${
-                  isActive
-                    ? 'bg-gw-accent/15 text-gw-text'
-                    : 'text-gw-text-dim hover:bg-gw-surface-2 hover:text-gw-text'
-                }`}
-              >
-                <span className={isActive ? 'text-gw-accent' : 'text-gw-text-faint mt-0.5'}>
-                  {tab.icon}
-                </span>
-                <span className="flex flex-col">
-                  <span className="font-medium">{tab.label}</span>
-                  <span className="text-[11px] text-gw-text-faint">{tab.description}</span>
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+      <TabList tabs={TABS} active={active} onSelect={onSelect} />
+
+      <p className="mt-6 px-2 pb-2 text-[10px] uppercase tracking-wider text-gw-text-faint">Info</p>
+      <TabList
+        tabs={SECONDARY_TABS}
+        active={active}
+        onSelect={onSelect}
+        warningCount={warningCount}
+      />
     </nav>
+  );
+}
+
+interface SidebarProps {
+  active: string;
+  onSelect: (id: string) => void;
+  warningCount?: number;
+}
+
+function TabList({
+  tabs,
+  active,
+  onSelect,
+  warningCount = 0,
+}: {
+  tabs: Tab[];
+  active: string;
+  onSelect: (id: string) => void;
+  warningCount?: number;
+}) {
+  return (
+    <ul className="space-y-0.5">
+      {tabs.map((tab) => {
+        const isActive = active === tab.id;
+        const showWarningBadge = tab.id === 'status' && warningCount > 0;
+        return (
+          <li key={tab.id}>
+            <button
+              type="button"
+              onClick={() => onSelect(tab.id)}
+              className={`flex w-full items-start gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                isActive
+                  ? 'bg-gw-accent/15 text-gw-text'
+                  : 'text-gw-text-dim hover:bg-gw-surface-2 hover:text-gw-text'
+              }`}
+            >
+              <span className={isActive ? 'text-gw-accent' : 'text-gw-text-faint mt-0.5'}>
+                {tab.icon}
+              </span>
+              <span className="flex flex-1 flex-col">
+                <span className="flex items-center gap-2 font-medium">
+                  {tab.label}
+                  {showWarningBadge && (
+                    <span
+                      className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500/20 px-1 text-[10px] font-semibold text-amber-300"
+                      title={`${warningCount} warning${warningCount === 1 ? '' : 's'}`}
+                    >
+                      {warningCount}
+                    </span>
+                  )}
+                </span>
+                <span className="text-[11px] text-gw-text-faint">{tab.description}</span>
+              </span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
