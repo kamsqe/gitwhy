@@ -37,14 +37,23 @@ export function ConnectionGate({ status, onRefresh }: ConnectionGateProps) {
         <p className="mt-3 text-sm text-gw-text-dim">
           The web UI talks to a local <code>gitwhy</code> server on your machine.
           That's how your repo data and LLM API key never leave your computer.
-          Start the server from inside your repository:
         </p>
 
-        <pre className="mt-3"><code>{`# inside your git repo
-npx gitwhy serve
+        <p className="mt-3 text-sm text-gw-text-dim">
+          <strong>One-time setup</strong> (gitwhy isn't on npm yet):
+        </p>
+        <pre className="mt-2"><code>{`git clone https://github.com/kamsqe/gitwhy.git
+cd gitwhy
+pnpm install && pnpm build
+pnpm link --global   # makes \`gitwhy\` work in any repo`}</code></pre>
 
-# or globally
-gitwhy serve --port 3787`}</code></pre>
+        <p className="mt-3 text-sm text-gw-text-dim">
+          <strong>Then in the repo you want to analyze:</strong>
+        </p>
+        <pre className="mt-2"><code>{`cd /path/to/your/repo
+gitwhy init      # one-time, picks LLM provider
+gitwhy index     # builds the AI-enriched index
+gitwhy serve     # starts the local API on :3787`}</code></pre>
 
         <p className="mt-3 text-sm text-gw-text-dim">
           Once it's running you'll see <code className="text-gw-text">listening on http://127.0.0.1:3787</code>. Then click below.

@@ -1,7 +1,7 @@
 /**
  * Typed client for the gitwhy local HTTP backend.
  *
- * The backend is expected to be running locally via `npx gitwhy serve`
+ * The backend is expected to be running locally via `gitwhy serve`
  * on http://127.0.0.1:3787 (default). User can override via settings.
  */
 
