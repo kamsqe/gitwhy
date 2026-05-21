@@ -5,6 +5,7 @@ import { Sidebar, TABS } from './Sidebar';
 import { useBackendStatus } from './lib/useBackend';
 import { AskTab } from './tabs/AskTab';
 import { CatchupTab } from './tabs/CatchupTab';
+import { EstimateTab } from './tabs/EstimateTab';
 import { HistoryTab } from './tabs/HistoryTab';
 import { RelatedTab } from './tabs/RelatedTab';
 import { RiskTab } from './tabs/RiskTab';
@@ -45,7 +46,14 @@ export function App() {
       <div className="flex flex-1">
         <Sidebar active={activeTab} onSelect={selectTab} />
         <main className="flex-1 overflow-y-auto">
-          {!status.health.initialized ? <NotInitializedView /> : <TabBody id={activeTab} />}
+          {/* Estimate is special — it walks git directly and doesn't need an
+              index, so we let it through even when uninitialized. That's the
+              whole point: see what indexing will cost before committing. */}
+          {!status.health.initialized && activeTab !== 'estimate' ? (
+            <NotInitializedView />
+          ) : (
+            <TabBody id={activeTab} />
+          )}
         </main>
       </div>
     </div>
@@ -66,6 +74,8 @@ function TabBody({ id }: { id: string }) {
       return <CatchupTab />;
     case 'search':
       return <SearchTab />;
+    case 'estimate':
+      return <EstimateTab />;
     default:
       return <AskTab />;
   }
@@ -83,6 +93,14 @@ function NotInitializedView() {
 gitwhy estimate                          # check projected cost first
 gitwhy index --provider gemini           # or openai, or mock
 `}</code></pre>
+      <p className="text-sm text-gw-text-dim">
+        Don't want to leave the browser? Use the{' '}
+        <a href="#estimate" className="text-gw-accent underline decoration-dotted">
+          Estimate tab
+        </a>{' '}
+        — it walks the git log directly and projects cost without needing an
+        index.
+      </p>
       <p className="text-xs text-gw-text-faint">
         Once indexing completes, refresh this page.
       </p>
