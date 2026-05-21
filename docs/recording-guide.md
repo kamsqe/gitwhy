@@ -29,7 +29,7 @@ gitwhy mcp-doctor --no-probe
 
 # In the gitwhy terminal:
 cd ~/Desktop/projects/epam\ capstone\ project/gitwhy
-pnpm test 2>&1 | tail -3
+pnpm test 2>&1 | tail -5
 # expected: 290 tests passed
 ```
 
@@ -107,7 +107,7 @@ gitwhy catchup --since "3 months ago"
 Switch to gitwhy terminal:
 
 ```sh
-pnpm test 2>&1 | tail -3
+pnpm test 2>&1 | tail -5
 ```
 
 > "Two hundred ninety tests across thirty-five files. Includes a dedicated adversarial suite: prompt injection, secrets in diffs, unicode hazards, SQL-injection-shaped inputs, concurrent queries."
