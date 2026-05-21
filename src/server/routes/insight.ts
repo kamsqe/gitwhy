@@ -126,6 +126,66 @@ export function registerInsightRoutes(app: Hono): void {
     const text = await callTool(catchupTool, parsed.data, appCtx);
     return c.json({ text });
   });
+
+  /**
+   * GET /api/paths?q=<query>&limit=<n>
+   *
+   * Returns distinct indexed file paths matching the query substring.
+   * Used by the web UI's autocomplete for path-input fields (Risk,
+   * Related, History) so users don't have to type exact paths blindly.
+   *
+   * Paths starting with the query rank before paths merely containing it.
+   * SQL-side filter + limit so this stays cheap even on big indexes.
+   */
+  app.get('/api/paths', (c) => {
+    const appCtx = c.get('appCtx');
+    const guard = requireInitialized(appCtx);
+    if (!guard.ok) return c.json({ error: guard.error }, 412);
+
+    const q = c.req.query('q') ?? '';
+    const limitRaw = c.req.query('limit');
+    let limit = 20;
+    if (limitRaw !== undefined) {
+      const parsed = Number.parseInt(limitRaw, 10);
+      if (Number.isNaN(parsed) || parsed < 1 || parsed > 100) {
+        return c.json(
+          { error: `limit must be an integer between 1 and 100 (got "${limitRaw}")` },
+          400,
+        );
+      }
+      limit = parsed;
+    }
+
+    const runtime = appCtx.runtime.get();
+    const trimmed = q.trim();
+
+    // Empty query: just return some recent-touched paths so the dropdown
+    // has something useful before the user types anything.
+    if (trimmed === '') {
+      const rows = runtime.db
+        .prepare(
+          `SELECT path FROM commit_files
+           GROUP BY path
+           ORDER BY MAX(rowid) DESC
+           LIMIT ?`,
+        )
+        .all(limit) as Array<{ path: string }>;
+      return c.json({ paths: rows.map((r) => r.path) });
+    }
+
+    const rows = runtime.db
+      .prepare(
+        `SELECT DISTINCT path FROM commit_files
+         WHERE path LIKE '%' || ? || '%'
+         ORDER BY
+           CASE WHEN path LIKE ? || '%' THEN 0 ELSE 1 END,
+           path
+         LIMIT ?`,
+      )
+      .all(trimmed, trimmed, limit) as Array<{ path: string }>;
+
+    return c.json({ paths: rows.map((r) => r.path) });
+  });
 }
 
 async function callTool<T>(

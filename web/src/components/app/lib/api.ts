@@ -246,4 +246,11 @@ export const api = {
 
   contextForPr: (input: { branch?: string; base?: string; files?: string[] }): Promise<SimpleTextResponse> =>
     call<SimpleTextResponse>('/api/context-for-pr', { method: 'POST', body: JSON.stringify(input) }),
+
+  paths: (input: { q: string; limit?: number }): Promise<{ paths: string[] }> => {
+    const params = new URLSearchParams();
+    params.set('q', input.q);
+    if (input.limit !== undefined) params.set('limit', String(input.limit));
+    return call<{ paths: string[] }>(`/api/paths?${params}`);
+  },
 };

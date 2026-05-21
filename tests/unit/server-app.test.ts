@@ -158,6 +158,42 @@ describe('HTTP server end-to-end', () => {
     });
   });
 
+  describe('GET /api/paths', () => {
+    it('returns paths matching a query substring', async () => {
+      const res = await app.request('/api/paths?q=x.ts');
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { paths: string[] };
+      expect(body.paths).toContain('src/x.ts');
+    });
+
+    it('ranks prefix matches above substring matches', async () => {
+      // Both src/x.ts and src/y.ts exist in the fixture; querying "src/"
+      // should return both, prefix-first.
+      const res = await app.request('/api/paths?q=src');
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { paths: string[] };
+      // First result should start with "src/" (the prefix match)
+      expect(body.paths[0]?.startsWith('src/')).toBe(true);
+    });
+
+    it('returns recent paths when query is empty', async () => {
+      const res = await app.request('/api/paths?q=');
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { paths: string[] };
+      expect(body.paths.length).toBeGreaterThan(0);
+    });
+
+    it('rejects limit=0', async () => {
+      const res = await app.request('/api/paths?q=x&limit=0');
+      expect(res.status).toBe(400);
+    });
+
+    it('rejects limit above 100', async () => {
+      const res = await app.request('/api/paths?q=x&limit=500');
+      expect(res.status).toBe(400);
+    });
+  });
+
   describe('POST /api/catchup', () => {
     it('returns narrated activity for a time window', async () => {
       const res = await app.request('/api/catchup', {

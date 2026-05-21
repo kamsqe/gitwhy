@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { api, type RiskResponse } from '../lib/api';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
+import { PathAutocomplete } from '../ui/PathAutocomplete';
 import { Spinner } from '../ui/Spinner';
 
 export function RiskTab() {
@@ -195,15 +196,11 @@ export function PathInputCard({
         {label}
       </label>
       <div className="mt-2 flex gap-2">
-        <input
-          type="text"
+        <PathAutocomplete
           value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') onSubmit();
-          }}
+          onChange={onChange}
+          onSubmit={onSubmit}
           placeholder={placeholder}
-          className="flex-1 rounded-md border border-gw-border bg-gw-surface px-3 py-2 text-sm gw-mono outline-none focus:border-gw-accent"
           disabled={loading}
         />
         <Button onClick={onSubmit} disabled={loading || !value.trim()}>
