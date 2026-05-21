@@ -48,9 +48,7 @@ export function RelatedTab() {
       {result && (
         <Card>
           {result.data.length === 0 ? (
-            <p className="text-sm text-gw-text-dim">
-              No co-changing files found. The file may have only been touched in isolation.
-            </p>
+            <p className="text-sm text-gw-text-dim">{result.text}</p>
           ) : (
             <ul className="space-y-2">
               {result.data.map((rel) => {

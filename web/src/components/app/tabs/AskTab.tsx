@@ -96,7 +96,9 @@ function AnswerView({ result }: { result: WhyResponse }) {
 
       {result.citations.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs uppercase tracking-wider text-gw-text-faint">Citations</p>
+          <p className="text-xs uppercase tracking-wider text-gw-text-faint">
+            {result.idk ? 'Closest matches (no answer synthesized)' : 'Citations'}
+          </p>
           {result.citations.map((c) => (
             <Card key={c.commitHash} className="!p-3">
               <div className="flex items-baseline gap-3 text-xs">

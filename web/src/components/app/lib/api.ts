@@ -180,10 +180,36 @@ async function call<T>(
 
   const body = (await response.json().catch(() => ({}))) as Record<string, unknown> & { error?: string };
   if (!response.ok) {
-    const msg = typeof body.error === 'string' ? body.error : `HTTP ${response.status}`;
-    throw new GitWhyApiError(response.status, msg);
+    const rawMsg = typeof body.error === 'string' ? body.error : `HTTP ${response.status}`;
+    throw new GitWhyApiError(response.status, humanizeError(rawMsg));
   }
   return body as T;
+}
+
+/**
+ * The server returns raw Zod validation errors as JSON-stringified arrays
+ * (e.g. `[{"code":"invalid_type","path":["question"],"message":"Required"}]`).
+ * Rendering that directly in the UI is hostile. Extract the human messages
+ * and join them, falling back to the raw string when it doesn't look like Zod.
+ */
+function humanizeError(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed.startsWith('[')) return raw;
+  try {
+    const parsed = JSON.parse(trimmed) as Array<{ message?: string; path?: unknown[] }>;
+    if (!Array.isArray(parsed) || parsed.length === 0) return raw;
+    return parsed
+      .map((issue) => {
+        const field = Array.isArray(issue.path) && issue.path.length > 0
+          ? issue.path.join('.')
+          : null;
+        const msg = typeof issue.message === 'string' ? issue.message : 'invalid';
+        return field ? `${field}: ${msg}` : msg;
+      })
+      .join('; ');
+  } catch {
+    return raw;
+  }
 }
 
 // ─── Endpoint wrappers ──────────────────────────────────────────────────
