@@ -119,7 +119,7 @@ function RiskView({ result }: { result: RiskResponse }) {
                   aria-hidden
                 />
                 <span className="flex-1 text-gw-text">{c.authorName}</span>
-                <span className="gw-mono text-xs">{c.sharePercent.toFixed(0)}%</span>
+                <span className="gw-mono text-xs">{formatShare(c.sharePercent)}</span>
                 <span className="text-xs text-gw-text-faint">
                   last {c.lastCommit.slice(0, 10)}
                 </span>
@@ -130,6 +130,17 @@ function RiskView({ result }: { result: RiskResponse }) {
       )}
     </div>
   );
+}
+
+/**
+ * Format a sharePercent for display in the contributor list.
+ * Tiny contributors (e.g. 0.4% on a heavily owned file) round to "0%" with
+ * toFixed(0), which looks like a UI bug next to "1 commits". Show "<1%"
+ * instead so they read as real-but-tiny.
+ */
+function formatShare(pct: number): string {
+  if (pct < 1 && pct > 0) return '<1%';
+  return `${pct.toFixed(0)}%`;
 }
 
 function BusFactorBar({

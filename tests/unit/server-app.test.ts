@@ -132,6 +132,30 @@ describe('HTTP server end-to-end', () => {
       const res = await app.request('/api/history');
       expect(res.status).toBe(400);
     });
+
+    it('rejects limit=0 with a clear validation error (regression)', async () => {
+      // Previously limit=0 was forwarded to SQL as LIMIT 0, silently returning
+      // an empty result for files with real history. Must be rejected.
+      const res = await app.request('/api/history?path=src/x.ts&limit=0');
+      expect(res.status).toBe(400);
+      const body = (await res.json()) as { error: string };
+      expect(body.error).toContain('between 1 and 200');
+    });
+
+    it('rejects negative limit', async () => {
+      const res = await app.request('/api/history?path=src/x.ts&limit=-5');
+      expect(res.status).toBe(400);
+    });
+
+    it('rejects non-numeric limit', async () => {
+      const res = await app.request('/api/history?path=src/x.ts&limit=abc');
+      expect(res.status).toBe(400);
+    });
+
+    it('rejects limit above 200', async () => {
+      const res = await app.request('/api/history?path=src/x.ts&limit=500');
+      expect(res.status).toBe(400);
+    });
   });
 
   describe('POST /api/catchup', () => {

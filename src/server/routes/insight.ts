@@ -78,10 +78,24 @@ export function registerInsightRoutes(app: Hono): void {
 
     const path = c.req.query('path');
     if (!path) return c.json({ error: 'path query parameter is required' }, 400);
-    const limitRaw = c.req.query('limit');
-    const limit = limitRaw ? Number.parseInt(limitRaw, 10) : undefined;
 
-    const text = await callTool(historyTool, { path, ...(limit !== undefined && !Number.isNaN(limit) && { limit }) }, appCtx);
+    // Validate `limit` explicitly. Previously `limit=0` slipped through and was
+    // forwarded to SQL as LIMIT 0, returning an empty result for files with
+    // real history — a silent data-loss bug.
+    const limitRaw = c.req.query('limit');
+    let limit: number | undefined;
+    if (limitRaw !== undefined) {
+      const parsed = Number.parseInt(limitRaw, 10);
+      if (Number.isNaN(parsed) || parsed < 1 || parsed > 200) {
+        return c.json(
+          { error: `limit must be an integer between 1 and 200 (got "${limitRaw}")` },
+          400,
+        );
+      }
+      limit = parsed;
+    }
+
+    const text = await callTool(historyTool, { path, ...(limit !== undefined && { limit }) }, appCtx);
     return c.json({ text });
   });
 
