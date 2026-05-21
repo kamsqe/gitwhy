@@ -114,6 +114,12 @@ function isAllowedOrigin(
   if (/^https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?$/.test(origin)) {
     return origin;
   }
+  // Allow Cloudflare Pages preview deploys: <branch>.gitwhy.pages.dev and
+  // per-deployment hashes like <hash>.gitwhy.pages.dev. Production
+  // gitwhy.pages.dev is covered by the static allow-list above.
+  if (/^https:\/\/[a-z0-9-]+\.gitwhy\.pages\.dev$/.test(origin)) {
+    return origin;
+  }
   return null;
 }
 

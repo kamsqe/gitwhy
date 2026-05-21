@@ -246,6 +246,29 @@ describe('HTTP server end-to-end', () => {
       expect(res.headers.get('access-control-allow-origin')).toBe('http://localhost:4321');
     });
 
+    it('allows Cloudflare Pages preview subdomains (branch + per-deploy)', async () => {
+      const branchAlias = await app.request('/api/health', {
+        headers: { Origin: 'https://web-ui.gitwhy.pages.dev' },
+      });
+      expect(branchAlias.headers.get('access-control-allow-origin')).toBe(
+        'https://web-ui.gitwhy.pages.dev',
+      );
+
+      const perDeploy = await app.request('/api/health', {
+        headers: { Origin: 'https://3485cde4.gitwhy.pages.dev' },
+      });
+      expect(perDeploy.headers.get('access-control-allow-origin')).toBe(
+        'https://3485cde4.gitwhy.pages.dev',
+      );
+    });
+
+    it('refuses look-alike domains pretending to be pages.dev', async () => {
+      const res = await app.request('/api/health', {
+        headers: { Origin: 'https://gitwhy.pages.dev.evil.com' },
+      });
+      expect(res.headers.get('access-control-allow-origin')).toBeNull();
+    });
+
     it('refuses unknown origins', async () => {
       const res = await app.request('/api/health', {
         headers: { Origin: 'https://evil.example.com' },
