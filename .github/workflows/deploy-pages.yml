@@ -2,7 +2,7 @@ name: Deploy site to Cloudflare Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, web-ui]
   workflow_dispatch:
 
 permissions:
@@ -45,4 +45,6 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy web/dist --project-name=gitwhy --branch=main
+          # On main: production deploy at gitwhy.pages.dev.
+          # On web-ui: preview deploy at web-ui.gitwhy.pages.dev (Cloudflare branch alias).
+          command: pages deploy web/dist --project-name=gitwhy --branch=${{ github.ref_name }}
