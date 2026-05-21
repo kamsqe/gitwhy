@@ -153,6 +153,60 @@ export interface HistoryResponse {
   data: HistoryCommit[];
 }
 
+export interface IndexProgress {
+  total: number;
+  processed: number;
+  enriched: number;
+  skipped: number;
+  errors: number;
+  promptTokens: number;
+  completionTokens: number;
+  costUsd: number;
+  currentHash?: string;
+}
+
+export interface IndexResult {
+  progress: IndexProgress;
+  durationMs: number;
+  stoppedReason?: 'budget' | 'complete' | 'cancelled';
+}
+
+export type IndexJobState = 'running' | 'done' | 'cancelled' | 'failed';
+
+export interface IndexJob {
+  id: string;
+  state: IndexJobState;
+  startedAt: number;
+  endedAt: number | null;
+  progress: IndexProgress | null;
+  result: IndexResult | null;
+  error: string | null;
+  options: {
+    provider?: 'openai' | 'gemini' | 'mock';
+    model?: string;
+    budgetUsd?: number;
+    since?: string;
+    until?: string;
+    maxCount?: number;
+  };
+}
+
+export type IndexJobEvent =
+  | { type: 'started'; jobId: string; startedAt: number; total: number | null }
+  | { type: 'progress'; progress: IndexProgress }
+  | { type: 'done'; result: IndexResult }
+  | { type: 'cancelled'; lastProgress: IndexProgress | null }
+  | { type: 'failed'; message: string };
+
+export interface IndexStartInput {
+  provider?: 'openai' | 'gemini' | 'mock';
+  model?: string;
+  budgetUsd?: number;
+  since?: string;
+  until?: string;
+  maxCount?: number;
+}
+
 export interface EstimateResponse {
   totalCommits: number;
   enrichmentModel: string;
@@ -283,4 +337,23 @@ export const api = {
     if (input.limit !== undefined) params.set('limit', String(input.limit));
     return call<{ paths: string[] }>(`/api/paths?${params}`);
   },
+
+  indexStart: (input: IndexStartInput): Promise<{ job: IndexJob }> =>
+    call<{ job: IndexJob }>('/api/index/start', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+
+  indexCancel: (): Promise<{ ok: true }> =>
+    call<{ ok: true }>('/api/index/cancel', { method: 'POST' }),
+
+  indexStatus: (): Promise<{ job: IndexJob | null }> =>
+    call<{ job: IndexJob | null }>('/api/index/status'),
+
+  /**
+   * Open an EventSource against /api/index/stream. The web UI consumes
+   * SSE directly via EventSource (not through `call()`), so this just
+   * returns a constructed instance. Caller is responsible for closing.
+   */
+  indexStream: (): EventSource => new EventSource(`${getBackendUrl()}/api/index/stream`),
 };

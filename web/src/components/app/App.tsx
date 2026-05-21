@@ -8,6 +8,7 @@ import { AskTab } from './tabs/AskTab';
 import { CatchupTab } from './tabs/CatchupTab';
 import { EstimateTab } from './tabs/EstimateTab';
 import { HistoryTab } from './tabs/HistoryTab';
+import { IndexTab } from './tabs/IndexTab';
 import { RelatedTab } from './tabs/RelatedTab';
 import { RiskTab } from './tabs/RiskTab';
 import { SearchTab } from './tabs/SearchTab';
@@ -70,13 +71,13 @@ export function App() {
           warningCount={indexStatus?.warnings.length ?? 0}
         />
         <main className="flex-1 overflow-y-auto">
-          {/* Estimate is special — it walks git directly and doesn't need an
-              index, so we let it through even when uninitialized. That's the
-              whole point: see what indexing will cost before committing. */}
-          {!status.health.initialized && activeTab !== 'estimate' ? (
+          {/* Estimate + Index don't require an existing index — they're
+              precisely how you go from "not indexed" to "indexed". Let them
+              through even when uninitialized. */}
+          {!status.health.initialized && activeTab !== 'estimate' && activeTab !== 'index' ? (
             <NotInitializedView />
           ) : (
-            <TabBody id={activeTab} health={status.health} />
+            <TabBody id={activeTab} health={status.health} onIndexed={refresh} />
           )}
         </main>
       </div>
@@ -84,7 +85,15 @@ export function App() {
   );
 }
 
-function TabBody({ id, health }: { id: string; health: HealthResponse }) {
+function TabBody({
+  id,
+  health,
+  onIndexed,
+}: {
+  id: string;
+  health: HealthResponse;
+  onIndexed: () => void;
+}) {
   switch (id) {
     case 'ask':
       return <AskTab />;
@@ -100,6 +109,8 @@ function TabBody({ id, health }: { id: string; health: HealthResponse }) {
       return <SearchTab />;
     case 'estimate':
       return <EstimateTab />;
+    case 'index':
+      return <IndexTab health={health} onIndexed={onIndexed} />;
     case 'status':
       return <StatusTab health={health} />;
     default:
@@ -113,23 +124,31 @@ function NotInitializedView() {
       <h1 className="text-2xl font-semibold">Repo not indexed yet</h1>
       <p className="text-sm text-gw-text-dim">
         The local backend is connected, but the repository at this path
-        hasn't been indexed. Run these commands in the repo:
+        hasn't been indexed. Two ways to fix that:
       </p>
-      <pre><code>{`gitwhy init
-gitwhy estimate                          # check projected cost first
-gitwhy index --provider gemini           # or openai, or mock
+      <div className="space-y-3">
+        <div className="rounded-md border border-gw-accent/40 bg-gw-accent/5 p-4">
+          <p className="text-sm font-medium text-gw-text">In the browser</p>
+          <p className="mt-1 text-sm text-gw-text-dim">
+            Hit the{' '}
+            <a href="#estimate" className="text-gw-accent underline decoration-dotted">
+              Estimate
+            </a>{' '}
+            tab to preview cost, then the{' '}
+            <a href="#index" className="text-gw-accent underline decoration-dotted">
+              Index
+            </a>{' '}
+            tab to actually build the index — live progress, cancel any time.
+          </p>
+        </div>
+        <div className="rounded-md border border-gw-border p-4">
+          <p className="text-sm font-medium text-gw-text">From the CLI</p>
+          <pre className="mt-2"><code>{`gitwhy init
+gitwhy estimate
+gitwhy index --provider gemini
 `}</code></pre>
-      <p className="text-sm text-gw-text-dim">
-        Don't want to leave the browser? Use the{' '}
-        <a href="#estimate" className="text-gw-accent underline decoration-dotted">
-          Estimate tab
-        </a>{' '}
-        — it walks the git log directly and projects cost without needing an
-        index.
-      </p>
-      <p className="text-xs text-gw-text-faint">
-        Once indexing completes, refresh this page.
-      </p>
+        </div>
+      </div>
     </div>
   );
 }

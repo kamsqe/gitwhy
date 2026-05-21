@@ -21,6 +21,14 @@ export interface IndexCommandOptions {
   readonly until?: string;
   /** Cap the number of commits processed (newest first). */
   readonly maxCount?: number;
+  /**
+   * Receive every progress tick — used by the SSE job manager to stream
+   * to the web UI. Default behavior (when omitted) is the CLI logger
+   * pattern: log every 5 processed + the final tick.
+   */
+  readonly onProgress?: (progress: Readonly<IndexProgress>) => void;
+  /** Cooperative cancellation; forwarded to indexer. */
+  readonly signal?: AbortSignal;
 }
 
 export async function runIndexCommand(options: IndexCommandOptions): Promise<IndexResult> {
@@ -59,12 +67,19 @@ export async function runIndexCommand(options: IndexCommandOptions): Promise<Ind
     llm,
     config: effectiveConfig,
     ...(options.model !== undefined && { enrichmentModel: options.model }),
+    ...(options.signal !== undefined && { signal: options.signal }),
     onProgress: (p: Readonly<IndexProgress>) => {
-      if (p.processed - lastLogged >= 5 || p.processed === p.total) {
-        lastLogged = p.processed;
-        logger.info(
-          `indexed ${p.processed}/${p.total} (enriched=${p.enriched}, skipped=${p.skipped}, errors=${p.errors}, est. $${p.costUsd.toFixed(4)})`,
-        );
+      // Always forward to the caller (used by the SSE bridge).
+      options.onProgress?.(p);
+      // CLI-style log throttling — only when no caller-provided progress
+      // sink, so the web UI doesn't get spammed in stdout.
+      if (options.onProgress === undefined) {
+        if (p.processed - lastLogged >= 5 || p.processed === p.total) {
+          lastLogged = p.processed;
+          logger.info(
+            `indexed ${p.processed}/${p.total} (enriched=${p.enriched}, skipped=${p.skipped}, errors=${p.errors}, est. $${p.costUsd.toFixed(4)})`,
+          );
+        }
       }
     },
   });

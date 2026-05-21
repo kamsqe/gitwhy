@@ -41,12 +41,14 @@ export interface IndexerOptions {
   readonly enrichmentModel?: string;
   /** When true, skip generating embeddings for enriched summaries. Default false. */
   readonly skipEmbeddings?: boolean;
+  /** AbortSignal for cooperative cancellation between commits. */
+  readonly signal?: AbortSignal;
 }
 
 export interface IndexResult {
   readonly progress: Readonly<IndexProgress>;
   readonly durationMs: number;
-  readonly stoppedReason?: 'budget' | 'complete';
+  readonly stoppedReason?: 'budget' | 'complete' | 'cancelled';
 }
 
 const DEFAULT_SKIP_ENRICHMENT: readonly CommitCategory[] = [
@@ -80,9 +82,17 @@ export async function indexRepo(options: IndexerOptions): Promise<IndexResult> {
   const alreadyIndexed = getIndexedHashes(db);
   const microCommits: CommitInfo[] = [];
   const categoryByHash = new Map<string, CommitCategory>();
-  let stoppedReason: 'budget' | 'complete' = 'complete';
+  let stoppedReason: 'budget' | 'complete' | 'cancelled' = 'complete';
 
   for await (const commit of reader.iterate()) {
+    // Cooperative cancellation: check between every commit so users can
+    // bail out from the web UI without leaving the process spinning.
+    // Don't break mid-commit — we want a consistent DB state.
+    if (options.signal?.aborted) {
+      stoppedReason = 'cancelled';
+      break;
+    }
+
     progress.processed++;
     progress.currentHash = commit.hash;
 
