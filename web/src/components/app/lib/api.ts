@@ -123,6 +123,36 @@ export interface SimpleTextResponse {
   text: string;
 }
 
+export interface SearchHit {
+  commitHash: string;
+  shortHash: string;
+  score: number;
+  date: string;
+  authorName: string;
+  originalMessage: string;
+  enrichedSummary: string | null;
+}
+
+export interface SearchResponse {
+  text: string;
+  data: SearchHit[];
+}
+
+export interface HistoryCommit {
+  commitHash: string;
+  shortHash: string;
+  authorName: string;
+  date: string;
+  category: string;
+  originalMessage: string;
+  enrichedSummary: string | null;
+}
+
+export interface HistoryResponse {
+  text: string;
+  data: HistoryCommit[];
+}
+
 export interface EstimateResponse {
   totalCommits: number;
   enrichmentModel: string;
@@ -228,18 +258,18 @@ export const api = {
   related: (input: { path: string; limit?: number; minCoCommits?: number }): Promise<RelatedResponse> =>
     call<RelatedResponse>('/api/related', { method: 'POST', body: JSON.stringify(input) }),
 
-  history: (input: { path: string; limit?: number }): Promise<SimpleTextResponse> => {
+  history: (input: { path: string; limit?: number }): Promise<HistoryResponse> => {
     const params = new URLSearchParams();
     params.set('path', input.path);
     if (input.limit !== undefined) params.set('limit', String(input.limit));
-    return call<SimpleTextResponse>(`/api/history?${params}`);
+    return call<HistoryResponse>(`/api/history?${params}`);
   },
 
   catchup: (input: { since: string; limit?: number }): Promise<SimpleTextResponse> =>
     call<SimpleTextResponse>('/api/catchup', { method: 'POST', body: JSON.stringify(input) }),
 
-  search: (input: { query: string; topK?: number }): Promise<SimpleTextResponse> =>
-    call<SimpleTextResponse>('/api/search', { method: 'POST', body: JSON.stringify(input) }),
+  search: (input: { query: string; topK?: number }): Promise<SearchResponse> =>
+    call<SearchResponse>('/api/search', { method: 'POST', body: JSON.stringify(input) }),
 
   estimate: (input: { since?: string; until?: string; maxCount?: number } = {}): Promise<EstimateResponse> =>
     call<EstimateResponse>('/api/estimate', { method: 'POST', body: JSON.stringify(input) }),

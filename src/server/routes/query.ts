@@ -1,7 +1,7 @@
 import type { Hono } from 'hono';
 import { z } from 'zod';
 import { runEstimate } from '../../cli/commands/estimate.js';
-import { searchTool } from '../../mcp/tools/search.js';
+import { runSearch } from '../../mcp/tools/search.js';
 import { requireInitialized } from '../app.js';
 
 /**
@@ -57,11 +57,28 @@ export function registerQueryRoutes(app: Hono): void {
     const parsed = searchSchema.safeParse(await c.req.json().catch(() => ({})));
     if (!parsed.success) return c.json({ error: parsed.error.message }, 400);
 
-    const result = await searchTool.handler(parsed.data, {
-      cwd: appCtx.cwd,
-      runtime: appCtx.runtime,
-    });
-    return c.json({ text: result.content[0]?.text ?? '' });
+    const hits = await runSearch(parsed.data, appCtx.runtime);
+    if (hits === 'embed_failed') {
+      return c.json({ error: 'Failed to embed the query.' }, 500);
+    }
+
+    // Build a text representation for clients that prefer text (CLI, chat
+    // UIs), alongside the structured array the web UI renders as cards.
+    let text: string;
+    if (hits.length === 0) {
+      text = 'No matching commits found. Run `gitwhy index` first, or try a different query.';
+    } else {
+      const lines: string[] = [`Top ${hits.length} commits for "${parsed.data.query}":`, ''];
+      for (const h of hits) {
+        const date = h.date.slice(0, 10);
+        lines.push(`[${h.shortHash}] ${date} by ${h.authorName}  (similarity: ${h.score.toFixed(2)})`);
+        const summary = h.enrichedSummary ?? h.originalMessage.split('\n', 1)[0];
+        lines.push(`  ${summary}`);
+        lines.push('');
+      }
+      text = lines.join('\n').trim();
+    }
+    return c.json({ text, data: hits });
   });
 
   const estimateSchema = z.object({

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api, type SimpleTextResponse } from '../lib/api';
+import { api, type SearchResponse } from '../lib/api';
 import { formatElapsedHint, useElapsed } from '../lib/useElapsed';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
@@ -9,7 +9,7 @@ import { ErrorCard } from './RiskTab';
 export function SearchTab() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<SimpleTextResponse | null>(null);
+  const [result, setResult] = useState<SearchResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const elapsedHint = formatElapsedHint(useElapsed(loading));
 
@@ -32,7 +32,8 @@ export function SearchTab() {
       <div>
         <h1 className="text-2xl font-semibold">Semantic search</h1>
         <p className="mt-1 text-sm text-gw-text-dim">
-          Ranked search over AI-enriched commit summaries. Returns raw hits — for synthesized answers, use Ask.
+          Ranked search over AI-enriched commit summaries. Returns raw hits —
+          for synthesized answers with reasoning, use Ask.
         </p>
       </div>
 
@@ -68,11 +69,39 @@ export function SearchTab() {
       {error && <ErrorCard message={error} />}
 
       {result && (
-        <Card>
-          <pre className="whitespace-pre-wrap text-sm leading-relaxed">
-            <code>{result.text}</code>
-          </pre>
-        </Card>
+        result.data.length === 0 ? (
+          <Card>
+            <p className="text-sm text-gw-text-dim">{result.text}</p>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-wider text-gw-text-faint">
+              {result.data.length} commit{result.data.length === 1 ? '' : 's'} ranked by semantic similarity
+            </p>
+            {result.data.map((hit) => (
+              <Card key={hit.commitHash} className="!p-3">
+                <div className="flex items-baseline gap-3 text-xs">
+                  <code className="rounded bg-gw-accent/15 px-1.5 py-0.5 text-gw-accent">
+                    {hit.shortHash}
+                  </code>
+                  <span className="text-gw-text-dim">{hit.authorName}</span>
+                  <span className="text-gw-text-faint">·</span>
+                  <span className="text-gw-text-faint">{hit.date.slice(0, 10)}</span>
+                  <span className="ml-auto gw-mono text-gw-text-faint">
+                    {(hit.score * 100).toFixed(0)}% similar
+                  </span>
+                </div>
+                {hit.enrichedSummary ? (
+                  <p className="mt-2 text-sm leading-relaxed text-gw-text">{hit.enrichedSummary}</p>
+                ) : (
+                  <p className="mt-2 text-sm italic text-gw-text-dim">
+                    {hit.originalMessage.split('\n', 1)[0]}
+                  </p>
+                )}
+              </Card>
+            ))}
+          </div>
+        )
       )}
     </div>
   );

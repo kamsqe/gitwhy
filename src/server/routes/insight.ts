@@ -1,7 +1,7 @@
 import type { Hono } from 'hono';
 import { z } from 'zod';
 import { catchupTool, parseSince } from '../../mcp/tools/catchup.js';
-import { historyTool } from '../../mcp/tools/history.js';
+import { historyTool, queryFileHistory } from '../../mcp/tools/history.js';
 import { relatedTool } from '../../mcp/tools/related.js';
 import { riskTool } from '../../mcp/tools/risk.js';
 import { requireInitialized } from '../app.js';
@@ -95,8 +95,20 @@ export function registerInsightRoutes(app: Hono): void {
       limit = parsed;
     }
 
+    const runtime = appCtx.runtime.get();
+    const effectiveLimit = limit ?? 20;
     const text = await callTool(historyTool, { path, ...(limit !== undefined && { limit }) }, appCtx);
-    return c.json({ text });
+    const data = queryFileHistory(runtime.db, path, effectiveLimit).map((r) => ({
+      commitHash: r.hash,
+      shortHash: r.short_hash,
+      authorName: r.author_name,
+      date: new Date(r.committed_at).toISOString(),
+      category: r.category,
+      originalMessage: r.message,
+      enrichedSummary: r.enriched_summary,
+    }));
+
+    return c.json({ text, data });
   });
 
   const catchupSchema = z.object({

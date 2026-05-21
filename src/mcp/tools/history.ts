@@ -72,7 +72,18 @@ export const historyTool: McpTool<HistoryInput> = {
   },
 };
 
-function queryFileHistory(db: DatabaseType, path: string, limit: number): HistoryRow[] {
+export type FileHistoryRow = HistoryRow;
+
+/**
+ * Exposed so HTTP route handlers can render structured data without
+ * re-parsing the MCP tool's text output. The MCP tool itself is
+ * unchanged — it still formats `rows` into a human-readable string.
+ */
+export function queryFileHistory(
+  db: DatabaseType,
+  path: string,
+  limit: number,
+): HistoryRow[] {
   const normalized = path.replace(/\\/g, '/');
   const pattern = normalized.endsWith('/') ? `${normalized}%` : normalized;
   return db
