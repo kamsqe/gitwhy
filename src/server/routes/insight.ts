@@ -1,6 +1,6 @@
 import type { Hono } from 'hono';
 import { z } from 'zod';
-import { catchupTool } from '../../mcp/tools/catchup.js';
+import { catchupTool, parseSince } from '../../mcp/tools/catchup.js';
 import { historyTool } from '../../mcp/tools/history.js';
 import { relatedTool } from '../../mcp/tools/related.js';
 import { riskTool } from '../../mcp/tools/risk.js';
@@ -100,7 +100,18 @@ export function registerInsightRoutes(app: Hono): void {
   });
 
   const catchupSchema = z.object({
-    since: z.string().min(1),
+    // Validate at the route boundary using the same parser the tool will use,
+    // so unparsable dates return 400 with a clear message instead of the tool
+    // returning 200 + an apologetic "Could not parse" text payload (which the
+    // UI then rendered as a successful result — confusing).
+    since: z
+      .string()
+      .min(1)
+      .refine((v) => parseSince(v) !== null, {
+        message:
+          'Could not parse "since" value. Use an ISO date (e.g. "2026-01-01") ' +
+          'or a relative period (e.g. "1 week ago", "3 months ago").',
+      }),
     limit: z.number().int().min(1).max(200).optional(),
   });
 

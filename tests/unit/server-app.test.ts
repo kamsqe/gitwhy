@@ -169,6 +169,17 @@ describe('HTTP server end-to-end', () => {
       const body = (await res.json()) as { text: string };
       expect(body.text.length).toBeGreaterThan(0);
     });
+
+    it('rejects unparsable since value with 400 (regression)', async () => {
+      // Used to return 200 + apologetic text in body — the UI rendered it as
+      // a successful result. Now the route validates the date upfront.
+      const res = await app.request('/api/catchup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ since: 'not a real date' }),
+      });
+      expect(res.status).toBe(400);
+    });
   });
 
   describe('POST /api/why', () => {
@@ -187,6 +198,28 @@ describe('HTTP server end-to-end', () => {
       };
       expect(body.answer.length).toBeGreaterThan(0);
       expect(Array.isArray(body.citations)).toBe(true);
+    });
+
+    it('rejects questions over 2000 chars (cost guardrail)', async () => {
+      const huge = 'a'.repeat(2001);
+      const res = await app.request('/api/why', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: huge }),
+      });
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('POST /api/search', () => {
+    it('rejects queries over 500 chars (cost guardrail)', async () => {
+      const huge = 'a'.repeat(501);
+      const res = await app.request('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: huge }),
+      });
+      expect(res.status).toBe(400);
     });
   });
 

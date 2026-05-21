@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api, type SimpleTextResponse } from '../lib/api';
+import { formatElapsedHint, useElapsed } from '../lib/useElapsed';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Spinner } from '../ui/Spinner';
@@ -10,6 +11,7 @@ export function SearchTab() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SimpleTextResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const elapsedHint = formatElapsedHint(useElapsed(loading));
 
   const submit = async (): Promise<void> => {
     if (!query.trim()) return;
@@ -51,7 +53,14 @@ export function SearchTab() {
             disabled={loading}
           />
           <Button onClick={() => void submit()} disabled={loading || !query.trim()}>
-            {loading ? <Spinner size={14} /> : 'Search'}
+            {loading ? (
+              <>
+                <Spinner size={14} />
+                {elapsedHint && <span className="ml-2 gw-mono opacity-70">{elapsedHint}</span>}
+              </>
+            ) : (
+              'Search'
+            )}
           </Button>
         </div>
       </Card>

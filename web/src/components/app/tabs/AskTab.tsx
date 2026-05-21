@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api, type WhyResponse } from '../lib/api';
+import { formatElapsedHint, useElapsed } from '../lib/useElapsed';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { ConfidenceBadge } from '../ui/ConfidenceBadge';
@@ -10,6 +11,7 @@ export function AskTab() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<WhyResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const elapsedHint = formatElapsedHint(useElapsed(loading));
 
   const submit = async (): Promise<void> => {
     if (!question.trim()) return;
@@ -53,12 +55,17 @@ export function AskTab() {
           <p className="text-xs text-gw-text-faint">
             <kbd className="rounded border border-gw-border bg-gw-surface px-1.5 py-0.5 text-[10px]">⌘ Enter</kbd>{' '}
             to submit
+            {question.length > 1800 && (
+              <span className={`ml-3 gw-mono ${question.length > 2000 ? 'text-red-400' : 'text-amber-400'}`}>
+                {question.length}/2000
+              </span>
+            )}
           </p>
           <Button onClick={() => void submit()} disabled={loading || !question.trim()}>
             {loading ? (
               <>
                 <Spinner size={14} />
-                Thinking…
+                Thinking…{elapsedHint && <span className="ml-1 gw-mono opacity-70">{elapsedHint}</span>}
               </>
             ) : (
               'Ask'

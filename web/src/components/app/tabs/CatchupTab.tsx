@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api, type SimpleTextResponse } from '../lib/api';
+import { formatElapsedHint, useElapsed } from '../lib/useElapsed';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Spinner } from '../ui/Spinner';
@@ -18,6 +19,7 @@ export function CatchupTab() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SimpleTextResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const elapsedHint = formatElapsedHint(useElapsed(loading));
 
   const submit = async (value: string): Promise<void> => {
     setLoading(true);
@@ -75,7 +77,14 @@ export function CatchupTab() {
             className="flex-1 rounded-md border border-gw-border bg-gw-surface px-3 py-2 text-sm gw-mono outline-none focus:border-gw-accent"
           />
           <Button onClick={() => void submit(since)} disabled={loading}>
-            {loading ? <Spinner size={14} /> : 'Show'}
+            {loading ? (
+              <>
+                <Spinner size={14} />
+                {elapsedHint && <span className="ml-2 gw-mono opacity-70">{elapsedHint}</span>}
+              </>
+            ) : (
+              'Show'
+            )}
           </Button>
         </div>
       </Card>

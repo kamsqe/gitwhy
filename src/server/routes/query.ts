@@ -13,7 +13,11 @@ import { requireInitialized } from '../app.js';
  */
 export function registerQueryRoutes(app: Hono): void {
   const whySchema = z.object({
-    question: z.string().min(1),
+    // Cap question length to keep LLM cost predictable. 2000 chars is plenty
+    // for any realistic natural-language question — anything longer is likely
+    // a paste accident or abuse. The local server still charges the user's
+    // own API key, so this is a guardrail, not a security boundary.
+    question: z.string().min(1).max(2000),
     topK: z.number().int().min(1).max(20).optional(),
     minConfidence: z.number().min(0).max(1).optional(),
     noCache: z.boolean().optional(),
@@ -38,7 +42,10 @@ export function registerQueryRoutes(app: Hono): void {
   });
 
   const searchSchema = z.object({
-    query: z.string().min(1),
+    // Embedding queries should be short keyword phrases, not essays. 500 char
+    // cap mirrors what real ranking queries look like in practice and keeps
+    // embedding cost trivial.
+    query: z.string().min(1).max(500),
     topK: z.number().int().min(1).max(50).optional(),
   });
 
