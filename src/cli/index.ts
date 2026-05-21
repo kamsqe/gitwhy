@@ -15,6 +15,7 @@ import { runMcpDoctor } from './commands/mcp-doctor.js';
 import { runRelatedCommand } from './commands/related.js';
 import { runRiskCommand } from './commands/risk.js';
 import { runSearchCommand } from './commands/search.js';
+import { runServeCommand } from './commands/serve.js';
 import { runStatusCommand } from './commands/status.js';
 import { runWhyCommand } from './commands/why.js';
 import { c } from '../utils/colors.js';
@@ -387,6 +388,19 @@ program
       process.stdout.write(`${icon}  ${date}  ${r.question}\n`);
       if (r.note) process.stdout.write(`    note: ${r.note}\n`);
     }
+  });
+
+program
+  .command('serve')
+  .description('Start the local HTTP API server (used by the gitwhy.pages.dev web UI)')
+  .option('-p, --port <n>', 'port to listen on (default 3787)', (v) => parseInt(v, 10))
+  .option('-H, --host <host>', 'host to bind (default 127.0.0.1 — never public)')
+  .action(async (opts: { port?: number; host?: string }) => {
+    await runServeCommand({
+      cwd: process.cwd(),
+      ...(opts.port !== undefined && { port: opts.port }),
+      ...(opts.host !== undefined && { host: opts.host }),
+    });
   });
 
 program
