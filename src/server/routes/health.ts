@@ -1,6 +1,7 @@
 import type { Hono } from 'hono';
 import { runStatusCommand } from '../../cli/commands/status.js';
 import { requireInitialized } from '../app.js';
+import { runDiagnostics } from '../diagnostics.js';
 
 const VERSION = '0.0.1';
 
@@ -35,5 +36,16 @@ export function registerHealthRoutes(app: Hono): void {
 
     const result = await runStatusCommand({ cwd: ctx.cwd });
     return c.json(result);
+  });
+
+  /**
+   * GET /api/diagnostics — runs a battery of cheap health checks against
+   * the local setup. Works without init: the DB-related checks degrade
+   * gracefully to "no index found yet" instead of erroring out, so users
+   * can use this to triage why setup isn't working.
+   */
+  app.get('/api/diagnostics', (c) => {
+    const ctx = c.get('appCtx');
+    return c.json(runDiagnostics(ctx));
   });
 }

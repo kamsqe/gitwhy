@@ -153,6 +153,21 @@ export interface HistoryResponse {
   data: HistoryCommit[];
 }
 
+export type DiagnosticStatus = 'ok' | 'warn' | 'fail' | 'info';
+
+export interface Diagnostic {
+  id: string;
+  label: string;
+  status: DiagnosticStatus;
+  detail: string;
+  hint?: string;
+}
+
+export interface DiagnosticsResponse {
+  ok: boolean;
+  checks: Diagnostic[];
+}
+
 export interface IndexProgress {
   total: number;
   processed: number;
@@ -358,4 +373,7 @@ export const api = {
    * returns a constructed instance. Caller is responsible for closing.
    */
   indexStream: (): EventSource => new EventSource(`${getBackendUrl()}/api/index/stream`),
+
+  diagnostics: (): Promise<DiagnosticsResponse> =>
+    call<DiagnosticsResponse>('/api/diagnostics'),
 };

@@ -71,6 +71,37 @@ describe('HTTP server end-to-end', () => {
     });
   });
 
+  describe('GET /api/diagnostics', () => {
+    it('returns a structured diagnostics result with ok=true on a healthy repo', async () => {
+      const res = await app.request('/api/diagnostics');
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as {
+        ok: boolean;
+        checks: Array<{ id: string; label: string; status: string; detail: string }>;
+      };
+      expect(typeof body.ok).toBe('boolean');
+      expect(Array.isArray(body.checks)).toBe(true);
+      expect(body.checks.length).toBeGreaterThan(0);
+      // Expect the canonical check ids to be present.
+      const ids = new Set(body.checks.map((c) => c.id));
+      expect(ids.has('provider_keys')).toBe(true);
+      expect(ids.has('provider_config')).toBe(true);
+      expect(ids.has('git_repo')).toBe(true);
+      expect(ids.has('db_integrity')).toBe(true);
+    });
+
+    it('git_repo check reports the current branch on a healthy repo', async () => {
+      const res = await app.request('/api/diagnostics');
+      const body = (await res.json()) as {
+        checks: Array<{ id: string; status: string; detail: string }>;
+      };
+      const git = body.checks.find((c) => c.id === 'git_repo');
+      expect(git).toBeDefined();
+      expect(git?.status).toBe('ok');
+      expect(git?.detail).toMatch(/branch/i);
+    });
+  });
+
   describe('GET /api/status', () => {
     it('returns coverage + LLM usage stats', async () => {
       const res = await app.request('/api/status');
