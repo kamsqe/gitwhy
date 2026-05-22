@@ -18,6 +18,12 @@ Every developer wastes hours re-deriving why a codebase looks the way it does. T
 
 ## Quick start
 
+**Just try it** — no install, no setup. Open the playground:
+
+→ **[gitwhy.pages.dev/playground/](https://gitwhy.pages.dev/playground/)** — pre-indexed zustand repo, click through Risk / History / Related / Ask in-browser. Bring your own Gemini key for synthesized answers; everything else is pure SQL over a bundled SQLite file.
+
+**Run it locally** against your own repo:
+
 ```sh
 # 1. Initialize gitwhy in your repo
 npx @kamsqe/gitwhy init
@@ -33,6 +39,8 @@ npx @kamsqe/gitwhy index
 # 4. Ask anything
 npx @kamsqe/gitwhy why "why does processPayment have a 30 second timeout?"
 ```
+
+**Or use the web UI** — `npx @kamsqe/gitwhy serve` then open [gitwhy.pages.dev/app/](https://gitwhy.pages.dev/app/). The page is just a UI shell; the local server holds your repo data and API key. Nothing leaves your machine.
 
 ### MCP integration (the headline feature)
 
@@ -72,6 +80,9 @@ Run `npx @kamsqe/gitwhy mcp-doctor` to verify your setup is wired correctly.
 - Hotspot detection (recent × total churn, excluding bots/merges/formatting)
 - Ghost-code detection (files whose dominant contributor has been inactive)
 - Co-change analysis (forward confidence + Jaccard-like correlation)
+- **Incident archaeologist**: pass a timestamp, get ranked candidates for what changed in the window (no LLM — pure SQL ranking with honest "this isn't blame" framing)
+- **Onboarding mode**: the ~10 commits a new dev should actually read, ranked by signal density (not line-count, which would surface megas — the *least* useful for onboarding)
+- **Co-change graph**: force-directed visualization where node color = bus factor. Single-points-of-failure visually cluster with whatever they pull along.
 - Composite risk score with human-readable reasons
 
 ## How it compares
@@ -118,7 +129,7 @@ The Ollama local-provider implementation is on the post-launch roadmap; the `Llm
 
 ```sh
 pnpm install
-pnpm test         # 280+ tests across 33 files
+pnpm test         # 369 tests across 39 files
 pnpm typecheck    # strict TS
 pnpm lint         # ESLint flat config
 pnpm build        # compile to dist/
@@ -128,6 +139,14 @@ CI runs on Node 20 and 22 against every PR.
 
 ## Status
 
-**Capstone v1** — multi-agent (Archaeologist + Knowledge + Insight), 9 MCP tools, OpenAI + Gemini + mock providers, vector RAG with confidence gating, NDJSON observability, dedicated adversarial test suite. Built MIT-licensed and open from day one.
+**Capstone v1** (submitted 2026-05-21) — multi-agent (Archaeologist + Knowledge + Insight), 9 MCP tools, OpenAI + Gemini + mock providers, vector RAG with confidence gating, NDJSON observability, dedicated adversarial test suite. Built MIT-licensed and open from day one. The submitted state is preserved at the `submission` git tag.
 
-**Post-launch** — Ollama provider, GitHub Action, VS Code extension, multi-repo support, calibrated risk-score weights. Contributions welcome — see [AGENTS.md](./AGENTS.md) for orientation.
+**Post-capstone open-source polish** (since submission):
+- ✅ HTTP server (`gitwhy serve`) — same backend over REST for non-MCP clients
+- ✅ Web UI at [gitwhy.pages.dev/app/](https://gitwhy.pages.dev/app/) — 11 tabs (Ask, Risk, Related, History, Catchup, Search, Estimate, Index, Incident, Onboarding, Graph) + a Status dashboard with diagnostics
+- ✅ Playground at [gitwhy.pages.dev/playground/](https://gitwhy.pages.dev/playground/) — pre-indexed zustand demo with in-browser SQLite (sql.js) and BYOK Gemini for Ask
+- ✅ Incremental indexing (resumes from last indexed commit), `.gitwhyignore` (excludes lockfiles/dist/etc.), author alias merging, diagnostics endpoint
+- ✅ Show-diff on citations (verifiability primitive), mega-commit decomposition view, incident archaeologist, onboarding mode, co-change graph viz
+- ✅ Published to npm as `@kamsqe/gitwhy`
+
+**Coming next** — Docker image, GitHub Action that posts PR review comments, Ollama local provider, VS Code extension, multi-repo support, calibrated risk-score weights from feedback. Contributions welcome — see [AGENTS.md](./AGENTS.md) for orientation.

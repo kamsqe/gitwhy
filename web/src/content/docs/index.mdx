@@ -5,21 +5,50 @@ template: splash
 hero:
   tagline: Persistent memory for AI coding agents over your git history. Indexed once, exposed over MCP — so your editor's AI agent answers "why does this exist?" instantly, with citations.
   actions:
+    - text: Try the playground
+      link: /playground/
+      icon: external
+      variant: primary
     - text: Quick start
       link: /quickstart/
       icon: right-arrow
-      variant: primary
-    - text: View on GitHub
+      variant: secondary
+    - text: GitHub
       link: https://github.com/kamsqe/gitwhy
       icon: external
-      variant: secondary
+      variant: minimal
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
 ## The pitch in one paragraph
 
-Every developer wastes hours re-deriving why a codebase looks the way it does. The answers live in git history, but commit messages are usually unhelpful (`fix`, `wip`, `major update`) and on-demand AI editors re-pay the analysis cost every session. GitWhy indexes your repository's history once, uses an LLM to reverse-engineer intent from actual code diffs, and exposes the result over MCP — so any compatible editor (Cursor, Claude Code, Windsurf) gets fast, citation-backed historical context as a native tool call.
+Every developer wastes hours re-deriving why a codebase looks the way it does. The answers live in git history, but commit messages are usually unhelpful (`fix`, `wip`, `major update`) and on-demand AI editors re-pay the analysis cost every session. GitWhy indexes your repository's history once, uses an LLM to reverse-engineer intent from actual code diffs, and exposes the result through three surfaces — an MCP server for your AI editor, a local HTTP server, and a polished web UI — so historical context is one click or one tool-call away, with citations.
+
+## Three ways to use it
+
+<CardGrid>
+  <Card title="In your AI editor (MCP)" icon="rocket">
+    The headline path. Add to Cursor / Claude Code / Windsurf config and the
+    editor's agent autonomously calls `gitwhy.why`, `gitwhy.risk`, etc. when
+    relevant. [Set it up →](/mcp-setup/)
+  </Card>
+  <Card title="In the browser (web UI)" icon="open-book">
+    Run `npx @kamsqe/gitwhy serve` then open the [web app](/app/). 11 tabs:
+    Ask, Risk, Related, History, Catchup, Search, Estimate, Index, Incident,
+    Onboarding, Graph. Your key + repo data never leave your machine.
+  </Card>
+  <Card title="From a script (CLI / HTTP)" icon="seti:bash">
+    `npx @kamsqe/gitwhy why "…"` for one-shot answers. Or `npx @kamsqe/gitwhy
+    serve` for a REST API on `127.0.0.1:3787` — easy to wire into custom
+    tooling.
+  </Card>
+  <Card title="Just kick the tires" icon="approve-check">
+    The [playground](/playground/) ships pre-indexed zustand with in-browser
+    SQLite. Risk/History/Related work with zero setup. Bring your own
+    Gemini key for synthesized answers.
+  </Card>
+</CardGrid>
 
 ## What's inside
 
@@ -32,13 +61,23 @@ Every developer wastes hours re-deriving why a codebase looks the way it does. T
     `gitwhy.why`, `gitwhy.history`, `gitwhy.risk`, `gitwhy.related`, `gitwhy.context_for_pr`,
     `gitwhy.catchup`, `gitwhy.search`, `gitwhy.suggest_commit_message`, `gitwhy.ping`.
   </Card>
+  <Card title="Beyond the basics" icon="setting">
+    Incident archaeologist (what landed in this 4-hour window?), onboarding mode (the
+    10 commits a new dev should read, ranked honestly — not by line-count), co-change
+    graph (single-points-of-failure cluster visually).
+  </Card>
   <Card title="Multi-provider LLM" icon="setting">
-    OpenAI (gpt-4o, gpt-4o-mini), Google Gemini (2.5-flash + gemini-embedding-001),
-    deterministic mock for tests. Auto-detected from env vars.
+    OpenAI (gpt-4o, gpt-4o-mini), Google Gemini (3.1-flash-lite + gemini-embedding-001),
+    deterministic mock for tests. Auto-detected from env vars. Free-tier friendly.
   </Card>
   <Card title="Adversarial-tested" icon="approve-check">
-    280+ tests across 33 files. Dedicated suite for prompt injection, secrets in diffs,
+    369 tests across 39 files. Dedicated suite for prompt injection, secrets in diffs,
     unicode hazards, SQL-injection-shaped inputs, concurrent queries.
+  </Card>
+  <Card title="Trust primitives" icon="document">
+    Every citation has a "show diff" toggle so you can verify the model's claim against
+    the actual change. Mega-commits get decomposed per-module rather than rendered as
+    a paragraph wall.
   </Card>
 </CardGrid>
 
