@@ -376,4 +376,12 @@ export const api = {
 
   diagnostics: (): Promise<DiagnosticsResponse> =>
     call<DiagnosticsResponse>('/api/diagnostics'),
+
+  diff: (input: { hash: string }): Promise<{ hash: string; diff: string; truncated: boolean; maxBytes: number }> => {
+    const params = new URLSearchParams();
+    params.set('hash', input.hash);
+    return call<{ hash: string; diff: string; truncated: boolean; maxBytes: number }>(
+      `/api/diff?${params}`,
+    );
+  },
 };

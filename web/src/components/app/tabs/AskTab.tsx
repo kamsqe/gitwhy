@@ -4,6 +4,7 @@ import { formatElapsedHint, useElapsed } from '../lib/useElapsed';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { ConfidenceBadge } from '../ui/ConfidenceBadge';
+import { DiffViewer } from '../ui/DiffViewer';
 import { Spinner } from '../ui/Spinner';
 
 export function AskTab() {
@@ -127,6 +128,7 @@ function AnswerView({ result }: { result: WhyResponse }) {
                   {c.originalMessage}
                 </p>
               )}
+              <DiffViewer hash={c.commitHash} />
             </Card>
           ))}
         </div>

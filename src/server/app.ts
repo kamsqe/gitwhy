@@ -7,6 +7,7 @@ import type { GitWhyConfig } from '../config/index.js';
 import { createMcpRuntimeFactory } from '../mcp/runtime.js';
 import type { McpRuntimeFactory } from '../mcp/runtime.js';
 import { loadDotEnv } from '../utils/env.js';
+import { registerDiffRoutes } from './routes/diff.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerIndexJobRoutes } from './routes/index-job.js';
 import { registerInsightRoutes } from './routes/insight.js';
@@ -87,6 +88,7 @@ export function createApp(options: ServerOptions): Hono {
   registerQueryRoutes(app);
   registerMiscRoutes(app);
   registerIndexJobRoutes(app);
+  registerDiffRoutes(app);
 
   app.notFound((c) =>
     c.json(

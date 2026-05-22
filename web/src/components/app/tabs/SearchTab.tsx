@@ -3,6 +3,7 @@ import { api, type SearchResponse } from '../lib/api';
 import { formatElapsedHint, useElapsed } from '../lib/useElapsed';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
+import { DiffViewer } from '../ui/DiffViewer';
 import { Spinner } from '../ui/Spinner';
 import { ErrorCard } from './RiskTab';
 
@@ -98,6 +99,7 @@ export function SearchTab() {
                     {hit.originalMessage.split('\n', 1)[0]}
                   </p>
                 )}
+                <DiffViewer hash={hit.commitHash} />
               </Card>
             ))}
           </div>

@@ -4,6 +4,7 @@
  * Uses Hono's `app.request()` to fire HTTP requests without binding a
  * port — tests stay deterministic and fast.
  */
+import { execSync } from 'node:child_process';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { runIndexCommand } from '../../src/cli/commands/index-command.js';
 import { runInit } from '../../src/cli/commands/init.js';
@@ -68,6 +69,45 @@ describe('HTTP server end-to-end', () => {
     it('always responds even without a request body', async () => {
       const res = await app.request('/api/health');
       expect(res.status).toBe(200);
+    });
+  });
+
+  describe('GET /api/diff', () => {
+    it('returns the diff for a real commit hash', async () => {
+      // Grab the most recent commit from the fixture and request its diff.
+      const hash = execSync('git rev-parse HEAD', { cwd: repo.path }).toString().trim();
+      const res = await app.request(`/api/diff?hash=${hash}`);
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as {
+        hash: string;
+        diff: string;
+        truncated: boolean;
+        maxBytes: number;
+      };
+      expect(body.hash).toBe(hash);
+      expect(body.diff.length).toBeGreaterThan(0);
+      // Unified-diff output always starts with "diff --git" for real changes.
+      expect(body.diff).toContain('diff --git');
+      expect(body.truncated).toBe(false);
+    });
+
+    it('returns 400 when hash query parameter is missing', async () => {
+      const res = await app.request('/api/diff');
+      expect(res.status).toBe(400);
+    });
+
+    it('rejects non-hex hashes with 400', async () => {
+      const res = await app.request('/api/diff?hash=NOT_HEX');
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 404 for unknown but well-formed hashes', async () => {
+      const res = await app.request(
+        '/api/diff?hash=deadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
+      );
+      expect(res.status).toBe(404);
+      const body = (await res.json()) as { error: string };
+      expect(body.error).toMatch(/not found/i);
     });
   });
 
