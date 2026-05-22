@@ -43,14 +43,15 @@ export function ConnectionGate({ status, onRefresh }: ConnectionGateProps) {
           <strong>Quick start</strong> — in the repo you want to analyze:
         </p>
         <pre className="mt-2"><code>{`cd /path/to/your/repo
-npx gitwhy init      # one-time, picks LLM provider
-npx gitwhy index     # builds the AI-enriched index
-npx gitwhy serve     # starts the local API on :3787`}</code></pre>
+npx @kamsqe/gitwhy init      # one-time, picks LLM provider
+npx @kamsqe/gitwhy index     # builds the AI-enriched index
+npx @kamsqe/gitwhy serve     # starts the local API on :3787`}</code></pre>
 
         <p className="mt-3 text-sm text-gw-text-dim">
           Prefer a permanent install?{' '}
-          <code className="text-gw-text">npm install -g gitwhy</code> then drop the
-          <code className="ml-1 text-gw-text">npx</code> prefix.
+          <code className="text-gw-text">npm install -g @kamsqe/gitwhy</code> then
+          drop the <code className="ml-1 text-gw-text">npx</code> prefix — the binary
+          is just <code className="text-gw-text">gitwhy</code>.
         </p>
 
         <p className="mt-3 text-sm text-gw-text-dim">

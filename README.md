@@ -20,18 +20,18 @@ Every developer wastes hours re-deriving why a codebase looks the way it does. T
 
 ```sh
 # 1. Initialize gitwhy in your repo
-npx gitwhy init
+npx @kamsqe/gitwhy init
 
 # 2. Set your LLM credentials (one of these)
 export OPENAI_API_KEY=sk-...
 export GEMINI_API_KEY=AIza...
 
 # 3. Estimate cost, then index
-npx gitwhy estimate
-npx gitwhy index
+npx @kamsqe/gitwhy estimate
+npx @kamsqe/gitwhy index
 
 # 4. Ask anything
-npx gitwhy why "why does processPayment have a 30 second timeout?"
+npx @kamsqe/gitwhy why "why does processPayment have a 30 second timeout?"
 ```
 
 ### MCP integration (the headline feature)
@@ -43,7 +43,7 @@ Add to your AI editor's MCP config (Cursor, Claude Code, Windsurf, etc.):
   "mcpServers": {
     "gitwhy": {
       "command": "npx",
-      "args": ["gitwhy", "mcp"]
+      "args": ["@kamsqe/gitwhy", "mcp"]
     }
   }
 }
@@ -51,7 +51,7 @@ Add to your AI editor's MCP config (Cursor, Claude Code, Windsurf, etc.):
 
 Your editor's agent now has 9 tools it can call autonomously: `gitwhy.why`, `gitwhy.history`, `gitwhy.risk`, `gitwhy.related`, `gitwhy.context_for_pr`, `gitwhy.catchup`, `gitwhy.search`, `gitwhy.suggest_commit_message`, `gitwhy.ping`. Ask your editor *"why does this file exist?"* and it calls `gitwhy.why` for you — no need to type GitWhy's name.
 
-Run `npx gitwhy mcp-doctor` to verify your setup is wired correctly.
+Run `npx @kamsqe/gitwhy mcp-doctor` to verify your setup is wired correctly.
 
 ## What it does
 
@@ -83,6 +83,9 @@ Run `npx gitwhy mcp-doctor` to verify your setup is wired correctly.
 | **Lore Protocol** | Improves *future* commit message hygiene | Understands *existing* messy history retroactively |
 
 ## CLI reference
+
+After `npm install -g @kamsqe/gitwhy` the binary is just `gitwhy`. Without a
+global install, prefix every invocation with `npx @kamsqe/gitwhy …`.
 
 ```sh
 gitwhy init                                  # Initialize .gitwhy/ in cwd
