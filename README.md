@@ -185,5 +185,8 @@ CI runs on Node 20 and 22 against every PR.
 - ✅ Incremental indexing (resumes from last indexed commit), `.gitwhyignore` (excludes lockfiles/dist/etc.), author alias merging, diagnostics endpoint
 - ✅ Show-diff on citations (verifiability primitive), mega-commit decomposition view, incident archaeologist, onboarding mode, co-change graph viz
 - ✅ Published to npm as `@kamsqe/gitwhy`
+- ✅ Docker image — multi-arch (linux/amd64, linux/arm64) for Node-hostile environments
+- ✅ GitHub Action — drop-in PR review bot that posts sticky per-PR comments with risk + contributors + co-changes
+- ✅ Custom marketing landing at [gitwhy.pages.dev](https://gitwhy.pages.dev) — editorial-technical aesthetic, three-surface showcase, honest trade-offs section
 
-**Coming next** — Docker image, GitHub Action that posts PR review comments, Ollama local provider, VS Code extension, multi-repo support, calibrated risk-score weights from feedback. Contributions welcome — see [AGENTS.md](./AGENTS.md) for orientation.
+**Coming next** — Ollama local provider, VS Code extension, multi-repo support, calibrated risk-score weights from feedback. Contributions welcome — see [AGENTS.md](./AGENTS.md) for orientation.

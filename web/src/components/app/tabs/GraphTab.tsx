@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api, type GraphEdge, type GraphNode, type GraphResponse } from '../lib/api';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
