@@ -205,6 +205,8 @@ export interface IndexStartInput {
   since?: string;
   until?: string;
   maxCount?: number;
+  /** Force a full re-walk of git history (bypass incremental default). */
+  full?: boolean;
 }
 
 export interface EstimateResponse {

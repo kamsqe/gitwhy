@@ -30,6 +30,7 @@ export function registerIndexJobRoutes(app: Hono): void {
     since: z.string().min(1).max(200).optional(),
     until: z.string().min(1).max(200).optional(),
     maxCount: z.number().int().min(1).max(100000).optional(),
+    full: z.boolean().optional(),
   });
 
   app.post('/api/index/start', async (c) => {

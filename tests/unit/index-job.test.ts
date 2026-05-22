@@ -111,6 +111,69 @@ describe('indexing job manager', () => {
     await waitForEvent((e) => e.type === 'done' || e.type === 'failed');
   });
 
+  // The next two tests need a clean repo (no prior .gitwhy/) since they
+  // assert on first-run processed counts. The shared `repo` from beforeAll
+  // accumulates state across earlier tests in this file.
+  it('second run is incremental — `since` defaults to last indexed timestamp', async () => {
+    const fresh = createTempRepo();
+    try {
+      fresh.commit({ message: 'one', files: { 'a.ts': 'x\n' }, date: '2026-01-01T10:00:00Z' });
+      fresh.commit({ message: 'two', files: { 'b.ts': 'y\n' }, date: '2026-01-02T10:00:00Z' });
+      fresh.commit({ message: 'three', files: { 'c.ts': 'z\n' }, date: '2026-01-03T10:00:00Z' });
+      await runInit({ cwd: fresh.path });
+
+      // First run: full index, all 3 commits.
+      startJob({ cwd: fresh.path, provider: 'mock' });
+      const firstDone = await waitForEvent((e) => e.type === 'done' || e.type === 'failed');
+      expect(firstDone.type).toBe('done');
+      if (firstDone.type === 'done') {
+        expect(firstDone.result.progress.processed).toBe(3);
+      }
+      _resetForTests();
+
+      // Second run: --since defaults to `last_indexed - 24h`. Latest commit
+      // is Jan 3, so the buffer covers Jan 2 onwards — Jan 1 falls out of
+      // git's --since window. We expect 2 commits iterated (Jan 2, Jan 3),
+      // both already-indexed → both skipped, none re-enriched.
+      startJob({ cwd: fresh.path, provider: 'mock' });
+      const secondDone = await waitForEvent((e) => e.type === 'done' || e.type === 'failed');
+      expect(secondDone.type).toBe('done');
+      if (secondDone.type === 'done') {
+        expect(secondDone.result.progress.processed).toBe(2);
+        expect(secondDone.result.progress.skipped).toBe(2);
+        expect(secondDone.result.progress.enriched).toBe(0);
+      }
+    } finally {
+      fresh.cleanup();
+    }
+  });
+
+  it('full=true bypasses incremental and re-walks everything', async () => {
+    const fresh = createTempRepo();
+    try {
+      fresh.commit({ message: 'one', files: { 'a.ts': 'x\n' }, date: '2026-01-01T10:00:00Z' });
+      fresh.commit({ message: 'two', files: { 'b.ts': 'y\n' }, date: '2026-01-02T10:00:00Z' });
+      fresh.commit({ message: 'three', files: { 'c.ts': 'z\n' }, date: '2026-01-03T10:00:00Z' });
+      await runInit({ cwd: fresh.path });
+
+      startJob({ cwd: fresh.path, provider: 'mock' });
+      await waitForEvent((e) => e.type === 'done' || e.type === 'failed');
+      _resetForTests();
+
+      // With full=true, --since is NOT defaulted. We re-walk all 3 commits;
+      // dedup-by-hash still skips them.
+      startJob({ cwd: fresh.path, provider: 'mock', full: true });
+      const done = await waitForEvent((e) => e.type === 'done' || e.type === 'failed');
+      expect(done.type).toBe('done');
+      if (done.type === 'done') {
+        expect(done.result.progress.processed).toBe(3);
+        expect(done.result.progress.skipped).toBe(3);
+      }
+    } finally {
+      fresh.cleanup();
+    }
+  });
+
   it('replays history to late subscribers', async () => {
     startJob({ cwd: repo.path, provider: 'mock' });
     await waitForEvent((e) => e.type === 'done' || e.type === 'failed');

@@ -98,7 +98,8 @@ program
   .option('--since <range>', 'limit to commits after this date / git range (e.g. "6 months ago")')
   .option('--until <range>', 'limit to commits before this date')
   .option('--max-count <n>', 'cap commits processed (newest first)', (v) => parseInt(v, 10))
-  .action(async (opts: { provider?: 'openai' | 'gemini' | 'mock'; model?: string; budget?: number; since?: string; until?: string; maxCount?: number }) => {
+  .option('--full', 'force a full git-log walk even when a prior index exists (default: incremental)', false)
+  .action(async (opts: { provider?: 'openai' | 'gemini' | 'mock'; model?: string; budget?: number; since?: string; until?: string; maxCount?: number; full?: boolean }) => {
     await runIndexCommand({
       cwd: process.cwd(),
       ...(opts.provider !== undefined && { provider: opts.provider }),
@@ -107,6 +108,7 @@ program
       ...(opts.since !== undefined && { since: opts.since }),
       ...(opts.until !== undefined && { until: opts.until }),
       ...(opts.maxCount !== undefined && { maxCount: opts.maxCount }),
+      ...(opts.full !== undefined && { full: opts.full }),
     });
   });
 

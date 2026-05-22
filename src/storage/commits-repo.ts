@@ -135,6 +135,21 @@ export function getIndexedHashes(db: DatabaseType): Set<string> {
   return new Set(rows.map((r) => r.hash));
 }
 
+/**
+ * Latest committed_at across all indexed commits, in unix ms.
+ * Used by incremental indexing to scope `git log --since=…` so re-runs
+ * after a `git pull` don't re-walk the whole history just to skip-by-hash.
+ *
+ * Returns null when the DB has no commits yet (first run).
+ */
+export function getLatestCommittedAt(db: DatabaseType): number | null {
+  const row = db
+    .prepare(`SELECT MAX(committed_at) AS max FROM commits`)
+    .get() as { max: number | null } | undefined;
+  if (!row || row.max == null) return null;
+  return row.max;
+}
+
 export function listCommits(
   db: DatabaseType,
   options: { limit?: number } = {},

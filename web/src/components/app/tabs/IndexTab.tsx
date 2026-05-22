@@ -24,6 +24,7 @@ interface IndexTabProps {
 export function IndexTab({ health, onIndexed }: IndexTabProps) {
   const { job, progress, error, start, cancel, streaming } = useIndexJob();
   const [budgetInput, setBudgetInput] = useState('');
+  const [fullReindex, setFullReindex] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const onStart = async (): Promise<void> => {
@@ -32,6 +33,7 @@ export function IndexTab({ health, onIndexed }: IndexTabProps) {
       const budget = budgetInput.trim() ? Number.parseFloat(budgetInput) : undefined;
       await start({
         ...(budget !== undefined && !Number.isNaN(budget) && budget > 0 && { budgetUsd: budget }),
+        ...(fullReindex && { full: true }),
       });
     } finally {
       setBusy(false);
@@ -90,6 +92,19 @@ export function IndexTab({ health, onIndexed }: IndexTabProps) {
               {busy ? <Spinner size={14} /> : 'Start indexing'}
             </Button>
           </div>
+          <label className="mt-3 flex items-center gap-2 text-xs text-gw-text-dim">
+            <input
+              type="checkbox"
+              checked={fullReindex}
+              onChange={(e) => setFullReindex(e.target.checked)}
+              disabled={busy}
+              className="accent-gw-accent"
+            />
+            <span>
+              Full re-walk (default is <em>incremental</em> — only new commits since last
+              index). Use this after force-push, rebase, or to refresh stale enrichments.
+            </span>
+          </label>
           <p className="mt-3 text-xs text-gw-text-faint">
             Tip: hit the{' '}
             <a href="#estimate" className="text-gw-accent underline decoration-dotted">

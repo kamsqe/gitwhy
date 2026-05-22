@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { loadConfig, resolvePaths } from '../../config/loader.js';
 import { createGitReader, gitReaderOptionsFromConfig } from '../../indexer/git-reader.js';
 import { indexRepo } from '../../indexer/indexer.js';
@@ -7,8 +8,11 @@ import { createGeminiProvider } from '../../providers/llm/gemini.js';
 import { createMockLlmProvider } from '../../providers/llm/mock.js';
 import { createOpenAiProvider } from '../../providers/llm/openai.js';
 import type { LlmProvider } from '../../providers/llm/types.js';
+import { getLatestCommittedAt } from '../../storage/commits-repo.js';
 import { openDatabase } from '../../storage/sqlite.js';
 import { logger } from '../../utils/logger.js';
+
+const INCREMENTAL_SAFETY_BUFFER_MS = 24 * 60 * 60 * 1000;
 
 export interface IndexCommandOptions {
   readonly cwd: string;
@@ -29,6 +33,14 @@ export interface IndexCommandOptions {
   readonly onProgress?: (progress: Readonly<IndexProgress>) => void;
   /** Cooperative cancellation; forwarded to indexer. */
   readonly signal?: AbortSignal;
+  /**
+   * Force a full git-log iteration even when a prior index exists.
+   * Useful after force-pushes / rebases or when you suspect drift.
+   * Default false: incremental — caps `--since` at the most-recent
+   * indexed commit timestamp (minus a 24h safety buffer) so re-runs
+   * after `git pull` only walk new history.
+   */
+  readonly full?: boolean;
 }
 
 export async function runIndexCommand(options: IndexCommandOptions): Promise<IndexResult> {
@@ -36,11 +48,35 @@ export async function runIndexCommand(options: IndexCommandOptions): Promise<Ind
   const config = loadConfig(cwd);
   const paths = resolvePaths(cwd, config);
 
+  // Incremental indexing — when a prior index exists and the caller didn't
+  // pin --since explicitly, scope the git log to commits at or after the
+  // most recent indexed timestamp (with a 24h safety buffer for clock skew
+  // and backdated commits). The existing hash-dedup still catches anything
+  // we re-iterate, so this is purely a speedup, not a correctness change.
+  let effectiveSince = options.since;
+  let incrementalNote: string | null = null;
+  if (effectiveSince === undefined && options.full !== true && existsSync(paths.commitsDb)) {
+    const probeDb = openDatabase({ path: paths.commitsDb });
+    try {
+      const latest = getLatestCommittedAt(probeDb);
+      if (latest !== null) {
+        const sinceMs = latest - INCREMENTAL_SAFETY_BUFFER_MS;
+        effectiveSince = new Date(sinceMs).toISOString();
+        incrementalNote = `incremental: resuming from ${new Date(sinceMs).toISOString().slice(0, 10)} (use --full to re-walk full history)`;
+      }
+    } finally {
+      probeDb.close();
+    }
+  }
+
   const readerOptions = gitReaderOptionsFromConfig(cwd, config.scope, {
-    ...(options.since !== undefined && { since: options.since }),
+    ...(effectiveSince !== undefined && { since: effectiveSince }),
     ...(options.until !== undefined && { until: options.until }),
     ...(options.maxCount !== undefined && { maxCount: options.maxCount }),
   });
+  if (incrementalNote !== null) {
+    logger.info(incrementalNote);
+  }
   const reader = createGitReader(readerOptions);
   const diag = await reader.diagnose();
   if (!diag.isGitRepo) {

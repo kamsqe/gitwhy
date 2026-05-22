@@ -39,7 +39,7 @@ export interface PublicJob {
   progress: IndexProgress | null;
   result: IndexResult | null;
   error: string | null;
-  options: Pick<StartJobOptions, 'provider' | 'model' | 'budgetUsd' | 'since' | 'until' | 'maxCount'>;
+  options: Pick<StartJobOptions, 'provider' | 'model' | 'budgetUsd' | 'since' | 'until' | 'maxCount' | 'full'>;
 }
 
 export interface StartJobOptions {
@@ -50,6 +50,7 @@ export interface StartJobOptions {
   since?: string;
   until?: string;
   maxCount?: number;
+  full?: boolean;
 }
 
 type Listener = (event: JobEvent) => void;
@@ -73,7 +74,7 @@ interface InternalJob {
 let current: InternalJob | null = null;
 
 function publicView(j: InternalJob): PublicJob {
-  const { provider, model, budgetUsd, since, until, maxCount } = j.options;
+  const { provider, model, budgetUsd, since, until, maxCount, full } = j.options;
   return {
     id: j.id,
     state: j.state,
@@ -89,6 +90,7 @@ function publicView(j: InternalJob): PublicJob {
       ...(since !== undefined && { since }),
       ...(until !== undefined && { until }),
       ...(maxCount !== undefined && { maxCount }),
+      ...(full !== undefined && { full }),
     },
   };
 }
@@ -152,6 +154,7 @@ async function run(job: InternalJob): Promise<void> {
       ...(job.options.since !== undefined && { since: job.options.since }),
       ...(job.options.until !== undefined && { until: job.options.until }),
       ...(job.options.maxCount !== undefined && { maxCount: job.options.maxCount }),
+      ...(job.options.full !== undefined && { full: job.options.full }),
       signal: job.abort.signal,
       onProgress: (p) => {
         // Snapshot so later mutations of `p` (which the indexer reuses) don't
