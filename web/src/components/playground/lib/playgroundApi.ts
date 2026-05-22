@@ -1,12 +1,15 @@
 import type { Database } from 'sql.js';
 import type {
+  Citation,
   HistoryCommit,
   HistoryResponse,
   HealthResponse,
   RelatedResponse,
   RiskResponse,
   StatusResponse,
+  WhyResponse,
 } from '../../app/lib/api';
+import { embedQuery, generate } from './geminiClient';
 import { queryAll } from './sqljs';
 
 /**
@@ -35,6 +38,7 @@ export function createPlaygroundApi(db: Database, demoName: string): PlaygroundA
     related: (input) => buildRelated(db, input.path, input.minCoCommits ?? 1, input.limit ?? 10),
     history: (input) => buildHistory(db, input.path, input.limit ?? 20),
     paths: (input) => buildPaths(db, input.q, input.limit ?? 20),
+    ask: (input) => buildAsk(db, input.question, input.apiKey, input.topK ?? 5),
   };
 }
 
@@ -49,6 +53,7 @@ export interface PlaygroundApi {
   }) => RelatedResponse;
   history: (input: { path: string; limit?: number }) => HistoryResponse;
   paths: (input: { q: string; limit?: number }) => { paths: string[] };
+  ask: (input: { question: string; apiKey: string; topK?: number }) => Promise<WhyResponse>;
 }
 
 // ─── Health + Status ────────────────────────────────────────────────────
@@ -404,6 +409,164 @@ function buildHistory(db: Database, path: string, limit: number): HistoryRespons
     text: `History for "${normalized}" (${rows.length} commits, most recent first)`,
     data,
   };
+}
+
+// ─── Ask (BYOK Gemini) ──────────────────────────────────────────────────
+
+interface CommitWithEmbeddingRow {
+  hash: string;
+  short_hash: string;
+  author_name: string;
+  committed_at: number;
+  message: string;
+  enriched_summary: string | null;
+  embedding: Uint8Array;
+  dimensions: number;
+}
+
+async function buildAsk(
+  db: Database,
+  question: string,
+  apiKey: string,
+  topK: number,
+): Promise<WhyResponse> {
+  // 1. Embed the question. Uses the same gemini-embedding-001 model the
+  //    indexer used so cosine similarity is comparable to what gitwhy
+  //    serve would compute.
+  const queryVec = await embedQuery(question, apiKey);
+
+  // 2. Load all commit embeddings + their metadata. For zustand (75
+  //    embeddings × 3072 dims) this is well under 1MB and fits easily
+  //    in browser memory. Bigger demos may need pagination later.
+  const rows = queryAll<CommitWithEmbeddingRow>(
+    db,
+    `SELECT c.hash, c.short_hash, c.author_name, c.committed_at, c.message,
+            c.enriched_summary, e.embedding, e.dimensions
+     FROM commit_embeddings e
+     INNER JOIN commits c ON c.hash = e.commit_hash`,
+  );
+
+  if (rows.length === 0) {
+    return {
+      answer:
+        "This demo doesn't have any indexed embeddings, so I can't synthesize an answer.",
+      confidence: 0,
+      citations: [],
+      modelUsed: null,
+      usage: { promptTokens: 0, completionTokens: 0 },
+      cached: false,
+      retrieved: 0,
+      idk: true,
+    };
+  }
+
+  // 3. Cosine similarity in JS. Both sides are unnormalized so we
+  //    normalize on the fly. Float64 accumulator for numerical stability.
+  const scored = rows.map((row) => {
+    const vec = bufferToFloat32(row.embedding);
+    return {
+      row,
+      score: cosineSimilarity(queryVec, vec),
+    };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  const top = scored.slice(0, topK);
+
+  // 4. Assemble citations (UI shape) + a prompt that mirrors what the
+  //    server-side knowledge agent uses. The model is asked to refuse
+  //    with a stock phrase when retrieval is weak — we map that to
+  //    idk:true so the UI can label citations as "Closest matches".
+  const citations: Citation[] = top.map((t) => ({
+    commitHash: t.row.hash,
+    shortHash: t.row.short_hash,
+    score: t.score,
+    date: new Date(t.row.committed_at).toISOString(),
+    authorName: t.row.author_name,
+    originalMessage: t.row.message,
+    enrichedSummary: t.row.enriched_summary,
+  }));
+
+  const prompt = buildPrompt(question, top);
+  const gen = await generate(prompt, apiKey);
+
+  // Heuristic idk detection — the prompt asks the model to start with
+  // a sentinel ("I don't have enough information") when retrieval is
+  // weak, identical to the server-side knowledge agent.
+  const idk = /^i don't have enough information/i.test(gen.text.trim());
+  const confidence = idk ? 0.3 : estimateConfidence(top);
+
+  return {
+    answer: gen.text,
+    confidence,
+    citations,
+    modelUsed: 'gemini-3.1-flash-lite',
+    usage: { promptTokens: gen.promptTokens, completionTokens: gen.completionTokens },
+    cached: false,
+    retrieved: top.length,
+    idk,
+  };
+}
+
+function bufferToFloat32(buf: Uint8Array): Float32Array {
+  return new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4);
+}
+
+function cosineSimilarity(a: Float32Array, b: Float32Array): number {
+  const len = Math.min(a.length, b.length);
+  let dot = 0;
+  let na = 0;
+  let nb = 0;
+  for (let i = 0; i < len; i++) {
+    const av = a[i] ?? 0;
+    const bv = b[i] ?? 0;
+    dot += av * bv;
+    na += av * av;
+    nb += bv * bv;
+  }
+  if (na === 0 || nb === 0) return 0;
+  return dot / (Math.sqrt(na) * Math.sqrt(nb));
+}
+
+function buildPrompt(
+  question: string,
+  hits: ReadonlyArray<{ row: CommitWithEmbeddingRow; score: number }>,
+): string {
+  const context = hits
+    .map((h, i) => {
+      const date = new Date(h.row.committed_at).toISOString().slice(0, 10);
+      const body = h.row.enriched_summary ?? h.row.message.split('\n', 1)[0] ?? '';
+      return `[${i + 1}] (${h.row.short_hash}, ${date}, ${h.row.author_name}, similarity ${h.score.toFixed(2)})\n${body}`;
+    })
+    .join('\n\n');
+  return `You are GitWhy, an assistant that answers questions about a software project's git history.
+
+The user asked:
+${question}
+
+Here are the most relevant commits from the indexed history:
+
+${context}
+
+Instructions:
+- Answer the question using ONLY the information in the commits above.
+- Quote short commit hashes (e.g. ${hits[0]?.row.short_hash}) inline when helpful.
+- If the commits don't contain enough information to answer, reply EXACTLY with:
+  "I don't have enough information to answer this from the indexed history."
+  followed by one sentence saying what kind of commits would be needed.
+- Keep the answer under 200 words.`;
+}
+
+function estimateConfidence(
+  hits: ReadonlyArray<{ score: number }>,
+): number {
+  if (hits.length === 0) return 0;
+  const top = hits[0]?.score ?? 0;
+  // Map a cosine score in [0, 1] to a confidence with a soft floor of
+  // 0.4 once retrieval matches at all. Mirrors the server's "if your
+  // top hit is >0.7 we're confident" heuristic.
+  if (top >= 0.7) return Math.min(0.95, 0.6 + (top - 0.7) * 1.2);
+  if (top >= 0.5) return 0.5 + (top - 0.5) * 0.5;
+  return 0.35 + Math.max(0, top) * 0.3;
 }
 
 // ─── Paths (autocomplete) ───────────────────────────────────────────────

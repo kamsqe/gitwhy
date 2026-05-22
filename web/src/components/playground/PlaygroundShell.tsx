@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Database } from 'sql.js';
 import { createPlaygroundApi, type PlaygroundApi } from './lib/playgroundApi';
+import { PlaygroundAskTab } from './tabs/PlaygroundAskTab';
 import { PlaygroundRiskTab } from './tabs/PlaygroundRiskTab';
 import { PlaygroundRelatedTab } from './tabs/PlaygroundRelatedTab';
 import { PlaygroundHistoryTab } from './tabs/PlaygroundHistoryTab';
@@ -8,6 +9,7 @@ import { PlaygroundStatusTab } from './tabs/PlaygroundStatusTab';
 import { PlaygroundUnavailableTab } from './tabs/PlaygroundUnavailableTab';
 
 const TABS = [
+  { id: 'ask', label: 'Ask', description: 'Q&A (bring your own key)' },
   { id: 'risk', label: 'Risk', description: 'bus factor + hotspots' },
   { id: 'related', label: 'Related', description: 'co-change matrix' },
   { id: 'history', label: 'History', description: 'file timeline' },
@@ -15,8 +17,7 @@ const TABS = [
 ] as const;
 
 const UNAVAILABLE_TABS = [
-  { id: 'ask', label: 'Ask', reason: 'needs an LLM API key — use the local app' },
-  { id: 'search', label: 'Search', reason: 'needs the embeddings table (stripped to keep download size sane)' },
+  { id: 'search', label: 'Search', reason: 'available in the local app' },
   { id: 'catchup', label: 'Catchup', reason: 'available in the local app' },
 ] as const;
 
@@ -110,6 +111,8 @@ function Sidebar({ active, onSelect }: { active: string; onSelect: (id: string) 
 
 function TabBody({ id, api }: { id: string; api: PlaygroundApi }) {
   switch (id) {
+    case 'ask':
+      return <PlaygroundAskTab api={api} />;
     case 'risk':
       return <PlaygroundRiskTab api={api} />;
     case 'related':
@@ -118,31 +121,23 @@ function TabBody({ id, api }: { id: string; api: PlaygroundApi }) {
       return <PlaygroundHistoryTab api={api} />;
     case 'status':
       return <PlaygroundStatusTab api={api} />;
-    case 'ask':
-      return (
-        <PlaygroundUnavailableTab
-          title="Ask"
-          summary="Q&A synthesizes answers using an LLM (Gemini or OpenAI), which the playground can't do without an API key."
-          ctaTab="risk"
-        />
-      );
     case 'search':
       return (
         <PlaygroundUnavailableTab
           title="Semantic search"
-          summary="Ranked search needs the embeddings table, which we stripped from playground DBs to keep the static download small (~600 floats × 5000+ commits would multiply the file size by 10×)."
-          ctaTab="related"
+          summary="Search is similar to Ask — same retrieval, but no synthesis. The Ask tab covers this case and tells you which commits matched."
+          ctaTab="ask"
         />
       );
     case 'catchup':
       return (
         <PlaygroundUnavailableTab
           title="Catchup"
-          summary="Activity narration uses model-aware grouping. Run gitwhy locally to use it."
+          summary="Activity narration uses category-aware grouping over your full git log. Run gitwhy locally against your own repo to use it."
           ctaTab="history"
         />
       );
     default:
-      return <PlaygroundRiskTab api={api} />;
+      return <PlaygroundAskTab api={api} />;
   }
 }
