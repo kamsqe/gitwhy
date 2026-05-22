@@ -30,6 +30,7 @@ export default defineConfig({
           label: 'Start here',
           items: [
             { label: 'What is GitWhy?', link: '/' },
+            { label: 'Try in browser →', link: '/playground/' },
             { label: 'Quick start', link: '/quickstart/' },
             { label: 'MCP setup', link: '/mcp-setup/' },
             { label: 'Open the app →', link: '/app/' },
