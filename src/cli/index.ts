@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
+import { runAliasesList, runAliasesSuggest } from './commands/aliases.js';
 import { runCatchupCommand } from './commands/catchup.js';
 import { runCommitCommand } from './commands/commit.js';
 import { runEstimate } from './commands/estimate.js';
@@ -110,6 +111,24 @@ program
       ...(opts.maxCount !== undefined && { maxCount: opts.maxCount }),
       ...(opts.full !== undefined && { full: opts.full }),
     });
+  });
+
+const aliasesCmd = program
+  .command('aliases')
+  .description('Manage author identity aliases (.gitwhy/aliases.json)');
+
+aliasesCmd
+  .command('list')
+  .description('Show the configured canonical → alias mappings')
+  .action(() => {
+    runAliasesList({ cwd: process.cwd() });
+  });
+
+aliasesCmd
+  .command('suggest')
+  .description('Suggest alias groups by clustering authors with shared names but different emails')
+  .action(() => {
+    runAliasesSuggest({ cwd: process.cwd() });
   });
 
 program

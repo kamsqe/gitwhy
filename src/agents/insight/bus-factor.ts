@@ -1,4 +1,5 @@
 import type { Database as DatabaseType } from 'better-sqlite3';
+import type { AliasResolver } from '../../config/aliases.js';
 
 export interface ContributorShare {
   readonly authorName: string;
@@ -34,7 +35,11 @@ interface ContributorRow {
  * Bot and merge commits are excluded — they don't represent meaningful
  * human ownership.
  */
-export function calculateBusFactor(db: DatabaseType, path: string): BusFactorResult {
+export function calculateBusFactor(
+  db: DatabaseType,
+  path: string,
+  aliases?: AliasResolver,
+): BusFactorResult {
   const normalized = path.replace(/\\/g, '/');
   const pattern = normalized.endsWith('/') ? `${normalized}%` : normalized;
 
@@ -55,10 +60,15 @@ export function calculateBusFactor(db: DatabaseType, path: string): BusFactorRes
     `)
     .all({ exact: normalized, pattern }) as ContributorRow[];
 
-  const totalLines = rows.reduce((s, r) => s + (r.lines ?? 0), 0);
-  const totalCommits = rows.reduce((s, r) => s + r.commits, 0);
+  // Merge aliased emails BEFORE share-percent computation. Otherwise the same
+  // human with two emails gets two slices of the pie and bus factor lies.
+  // Without an alias resolver we use the identity mapping.
+  const merged = aliases?.hasAliases === true ? mergeByCanonical(rows, aliases) : rows;
 
-  const contributors: ContributorShare[] = rows.map((r) => ({
+  const totalLines = merged.reduce((s, r) => s + (r.lines ?? 0), 0);
+  const totalCommits = merged.reduce((s, r) => s + r.commits, 0);
+
+  const contributors: ContributorShare[] = merged.map((r) => ({
     authorName: r.author_name,
     authorEmail: r.author_email,
     commits: r.commits,
@@ -92,4 +102,46 @@ export function calculateBusFactor(db: DatabaseType, path: string): BusFactorRes
     contributors,
     soleOwner,
   };
+}
+
+/**
+ * Group raw per-email rows by canonical email. Sums commits/lines and picks
+ * the most-recent last_commit. The author_name shown is the one associated
+ * with the canonical email's most-active row (typically the user's current
+ * display name rather than an old one).
+ */
+function mergeByCanonical(
+  rows: ReadonlyArray<ContributorRow>,
+  aliases: AliasResolver,
+): ContributorRow[] {
+  const buckets = new Map<string, ContributorRow & { topLines: number }>();
+  for (const r of rows) {
+    const canonical = aliases.resolve(r.author_email);
+    const existing = buckets.get(canonical);
+    if (existing === undefined) {
+      buckets.set(canonical, {
+        author_name: r.author_name,
+        author_email: canonical,
+        commits: r.commits,
+        lines: r.lines ?? 0,
+        last_commit: r.last_commit,
+        topLines: r.lines ?? 0,
+      });
+    } else {
+      existing.commits += r.commits;
+      existing.lines = (existing.lines ?? 0) + (r.lines ?? 0);
+      if (r.last_commit > existing.last_commit) {
+        existing.last_commit = r.last_commit;
+      }
+      // Pick the name from whichever alias contributed the most lines.
+      if ((r.lines ?? 0) > existing.topLines) {
+        existing.author_name = r.author_name;
+        existing.topLines = r.lines ?? 0;
+      }
+    }
+  }
+  // Drop the helper field and re-sort by lines descending (matches SQL order).
+  return Array.from(buckets.values())
+    .map(({ topLines: _, ...rest }) => rest)
+    .sort((a, b) => (b.lines ?? 0) - (a.lines ?? 0));
 }

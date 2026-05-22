@@ -35,6 +35,10 @@ export function openDatabase(options: OpenDatabaseOptions): DatabaseType {
  */
 function applyMigrations(db: DatabaseType): void {
   // commit_files.excluded — added for .gitwhyignore filtering (Phase D.2).
+  // The schema CREATE TABLE IF NOT EXISTS clause is a no-op on pre-existing
+  // tables, so the column won't appear via schema reload alone. Order matters:
+  // add the column FIRST, then the index — otherwise the index DDL throws
+  // "no such column".
   const cols = db.prepare(`PRAGMA table_info(commit_files)`).all() as Array<{
     name: string;
   }>;
@@ -42,6 +46,7 @@ function applyMigrations(db: DatabaseType): void {
   if (!hasExcluded) {
     db.exec(`ALTER TABLE commit_files ADD COLUMN excluded INTEGER NOT NULL DEFAULT 0`);
   }
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_commit_files_excluded ON commit_files(excluded)`);
 }
 
 export function readSchema(): string {

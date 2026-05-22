@@ -5,6 +5,7 @@ import { createInsightAgent } from '../agents/insight/index.js';
 import type { InsightAgent } from '../agents/insight/index.js';
 import { createKnowledgeAgent } from '../agents/knowledge/index.js';
 import type { KnowledgeAgent } from '../agents/knowledge/index.js';
+import { loadAliases } from '../config/aliases.js';
 import type { GitWhyConfig } from '../config/index.js';
 import { loadConfig, resolvePaths } from '../config/loader.js';
 import { createDefaultTracer } from '../observability/tracer.js';
@@ -67,7 +68,11 @@ export function createMcpRuntimeFactory(options: CreateRuntimeOptions): McpRunti
       const db = openDatabase({ path: paths.commitsDb });
       const vectorStore = createSqliteBlobVectorStore({ db });
       const knowledge = createKnowledgeAgent({ db, llm, vectorStore, config });
-      const insight = createInsightAgent(db);
+      // Author aliases — merge multi-email humans into one identity.
+      // Missing file → identity resolver (no merging), so this is a no-op
+      // for users who haven't configured aliases.json.
+      const aliases = loadAliases(options.cwd);
+      const insight = createInsightAgent(db, aliases);
       const traceFile = join(paths.tracesDir, `${new Date().toISOString().replace(/[:.]/g, '-')}.ndjson`);
       const tracer = createDefaultTracer(traceFile);
       tracer.emit({ kind: 'cli', data: { action: 'runtime_init', provider: llm.name } });

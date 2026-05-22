@@ -1,4 +1,5 @@
 import type { Database as DatabaseType } from 'better-sqlite3';
+import type { AliasResolver } from '../../config/aliases.js';
 import { calculateBusFactor } from './bus-factor.js';
 import { detectGhostCode } from './ghost-code.js';
 import { getHotspots } from './hotspots.js';
@@ -32,9 +33,13 @@ export interface RiskScoreResult {
  *   - ghost code:      0.30   (no active maintainer)
  *   - hotspot heat:    0.30   (high recent churn correlates with bugs)
  */
-export function calculateRiskScore(db: DatabaseType, path: string): RiskScoreResult {
+export function calculateRiskScore(
+  db: DatabaseType,
+  path: string,
+  aliases?: AliasResolver,
+): RiskScoreResult {
   const normalized = path.replace(/\\/g, '/');
-  const bus = calculateBusFactor(db, normalized);
+  const bus = calculateBusFactor(db, normalized, aliases);
   const hotspot = getHotspots(db, { pathPrefix: normalized, recentDays: 90, limit: 1 })[0];
   const ghosts = detectGhostCode(db, { pathPrefix: normalized, limit: 1 });
   const ghost = ghosts.find((g) => g.path === normalized);

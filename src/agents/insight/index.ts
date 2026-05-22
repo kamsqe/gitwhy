@@ -1,4 +1,5 @@
 import type { Database as DatabaseType } from 'better-sqlite3';
+import type { AliasResolver } from '../../config/aliases.js';
 import { calculateBusFactor } from './bus-factor.js';
 import type { BusFactorResult } from './bus-factor.js';
 import { findRelatedFiles } from './co-change.js';
@@ -38,13 +39,18 @@ export interface InsightAgent {
 /**
  * Convenience facade bundling all Insight queries against a single DB
  * handle. Each method is a pure SQL query — no LLM involvement.
+ *
+ * When an `aliases` resolver is provided, contributor-grouping queries
+ * (currently just busFactor) merge aliased emails to a canonical identity
+ * before computing shares. The risk score reads from busFactor so it
+ * inherits the alias merging.
  */
-export function createInsightAgent(db: DatabaseType): InsightAgent {
+export function createInsightAgent(db: DatabaseType, aliases?: AliasResolver): InsightAgent {
   return {
-    busFactor: (path) => calculateBusFactor(db, path),
+    busFactor: (path) => calculateBusFactor(db, path, aliases),
     hotspots: (options) => getHotspots(db, options),
     ghostCode: (options) => detectGhostCode(db, options),
     relatedFiles: (path, options) => findRelatedFiles(db, path, options),
-    riskScore: (path) => calculateRiskScore(db, path),
+    riskScore: (path) => calculateRiskScore(db, path, aliases),
   };
 }

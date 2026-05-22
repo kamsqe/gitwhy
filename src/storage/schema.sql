@@ -50,7 +50,10 @@ CREATE TABLE IF NOT EXISTS commit_files (
 );
 
 CREATE INDEX IF NOT EXISTS idx_commit_files_path ON commit_files(path);
-CREATE INDEX IF NOT EXISTS idx_commit_files_excluded ON commit_files(excluded);
+-- Index on `excluded` is created by applyMigrations() in sqlite.ts after the
+-- column is added on legacy DBs. Don't add it here — db.exec(schema) runs
+-- before migrations, and CREATE INDEX on a column that doesn't exist yet
+-- throws on every open of a pre-D.2 DB.
 
 -- Clustering: groups of micro-commits analyzed together.
 CREATE TABLE IF NOT EXISTS commit_clusters (
