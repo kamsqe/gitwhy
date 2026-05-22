@@ -399,7 +399,32 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(input),
     }),
+
+  graph: (input: { maxNodes?: number; minCoCommits?: number } = {}): Promise<GraphResponse> =>
+    call<GraphResponse>('/api/graph', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
 };
+
+export interface GraphNode {
+  path: string;
+  commits: number;
+  busFactor: number | null;
+}
+
+export interface GraphEdge {
+  source: string;
+  target: string;
+  weight: number;
+}
+
+export interface GraphResponse {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  truncated: boolean;
+  totalCandidates: number;
+}
 
 export interface OnboardingCommit {
   commitHash: string;

@@ -68,6 +68,12 @@ export const TABS: Tab[] = [
     description: 'reading list for new devs',
     icon: <Icon path="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />,
   },
+  {
+    id: 'graph',
+    label: 'Graph',
+    description: 'co-change cluster map',
+    icon: <Icon path="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />,
+  },
 ];
 
 // Secondary tabs — meta/info, not analysis tools. Separated visually so the

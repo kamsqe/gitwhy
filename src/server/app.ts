@@ -8,6 +8,7 @@ import { createMcpRuntimeFactory } from '../mcp/runtime.js';
 import type { McpRuntimeFactory } from '../mcp/runtime.js';
 import { loadDotEnv } from '../utils/env.js';
 import { registerDiffRoutes } from './routes/diff.js';
+import { registerGraphRoutes } from './routes/graph.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerIncidentRoutes } from './routes/incident.js';
 import { registerIndexJobRoutes } from './routes/index-job.js';
@@ -93,6 +94,7 @@ export function createApp(options: ServerOptions): Hono {
   registerDiffRoutes(app);
   registerIncidentRoutes(app);
   registerOnboardingRoutes(app);
+  registerGraphRoutes(app);
 
   app.notFound((c) =>
     c.json(

@@ -72,6 +72,43 @@ describe('HTTP server end-to-end', () => {
     });
   });
 
+  describe('POST /api/graph', () => {
+    it('returns nodes + edges with shape the UI expects', async () => {
+      const res = await app.request('/api/graph', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ maxNodes: 10, minCoCommits: 1 }),
+      });
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as {
+        nodes: Array<{ path: string; commits: number; busFactor: number | null }>;
+        edges: Array<{ source: string; target: string; weight: number }>;
+        truncated: boolean;
+        totalCandidates: number;
+      };
+      expect(Array.isArray(body.nodes)).toBe(true);
+      expect(Array.isArray(body.edges)).toBe(true);
+      // Fixture has only a handful of files; we shouldn't be truncated.
+      expect(body.truncated).toBe(false);
+      // Every edge endpoint must reference a node we returned.
+      const ids = new Set(body.nodes.map((n) => n.path));
+      for (const e of body.edges) {
+        expect(ids.has(e.source)).toBe(true);
+        expect(ids.has(e.target)).toBe(true);
+        expect(e.weight).toBeGreaterThanOrEqual(1);
+      }
+    });
+
+    it('rejects maxNodes > 200 with 400', async () => {
+      const res = await app.request('/api/graph', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ maxNodes: 999 }),
+      });
+      expect(res.status).toBe(400);
+    });
+  });
+
   describe('POST /api/onboarding', () => {
     it('returns ranked recommendations with reasons', async () => {
       const res = await app.request('/api/onboarding', {

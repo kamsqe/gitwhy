@@ -7,6 +7,7 @@ import { useBackendStatus } from './lib/useBackend';
 import { AskTab } from './tabs/AskTab';
 import { CatchupTab } from './tabs/CatchupTab';
 import { EstimateTab } from './tabs/EstimateTab';
+import { GraphTab } from './tabs/GraphTab';
 import { HistoryTab } from './tabs/HistoryTab';
 import { IncidentTab } from './tabs/IncidentTab';
 import { IndexTab } from './tabs/IndexTab';
@@ -117,6 +118,8 @@ function TabBody({
       return <IncidentTab />;
     case 'onboarding':
       return <OnboardingTab />;
+    case 'graph':
+      return <GraphTab />;
     case 'status':
       return <StatusTab health={health} />;
     default:
