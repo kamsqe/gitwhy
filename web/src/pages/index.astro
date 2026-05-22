@@ -1,0 +1,498 @@
+---
+import '../assets/marketing.css';
+
+const NAV = [
+  { label: 'Playground', href: '/playground/' },
+  { label: 'Quickstart', href: '/quickstart/' },
+  { label: 'MCP', href: '/mcp-setup/' },
+  { label: 'Docs', href: '/docs/architecture/' },
+  { label: 'GitHub', href: 'https://github.com/kamsqe/gitwhy' },
+];
+
+const MCP_TOOLS = [
+  'gitwhy.why',
+  'gitwhy.history',
+  'gitwhy.risk',
+  'gitwhy.related',
+  'gitwhy.context_for_pr',
+  'gitwhy.catchup',
+  'gitwhy.search',
+  'gitwhy.suggest_commit_message',
+  'gitwhy.ping',
+];
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>GitWhy — Persistent memory for your codebase</title>
+    <meta
+      name="description"
+      content="GitWhy indexes git history with AI-inferred intent and exposes it over MCP, web UI, and CLI. Cited every time. MIT-licensed, runs local."
+    />
+    <link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:title" content="GitWhy — Persistent memory for your codebase" />
+    <meta property="og:description" content="Index your git history once, expose over MCP. Your editor's agent answers why with citations." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://gitwhy.pages.dev/" />
+  </head>
+  <body class="marketing">
+
+    <!-- ═══════════════════════════════════════ HEADER ═══════════════════════════════════════ -->
+    <header class="container" style="display: flex; align-items: center; justify-content: space-between; padding-top: 1.5rem; padding-bottom: 1.5rem;">
+      <a href="/" style="display: flex; align-items: center; gap: 0.625rem;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--mk-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="6" cy="6" r="2.5" />
+          <circle cx="6" cy="18" r="2.5" />
+          <circle cx="18" cy="12" r="2.5" />
+          <path d="M6 8.5v7M8.2 6.5q5 1 6.5 5M8.2 17.5q5-1 6.5-5" />
+        </svg>
+        <span class="display" style="font-size: 1.375rem; font-weight: 500; letter-spacing: -0.02em;">GitWhy</span>
+      </a>
+      <nav style="display: flex; gap: 1.75rem; align-items: center;">
+        {NAV.map((l) => (
+          <a href={l.href} class="mono" style="font-size: 0.8125rem; color: var(--mk-text-dim);" data-nav-link>
+            {l.label}
+          </a>
+        ))}
+      </nav>
+    </header>
+
+    <!-- ═══════════════════════════════════════ HERO ═══════════════════════════════════════ -->
+    <section class="hero">
+      <div class="container" style="position: relative; z-index: 1;">
+        <div class="reveal reveal-1" style="display: inline-flex; gap: 0.5rem; align-items: center; margin-bottom: 2.5rem; flex-wrap: wrap;">
+          <span class="tag">
+            <span class="tag-dot"></span>
+            v0.1.1 on npm
+          </span>
+          <span class="tag" style="border-color: rgba(251, 191, 36, 0.25); color: var(--mk-emphasis);">
+            <span class="tag-dot tag-dot--amber"></span>
+            MIT · Open from day one
+          </span>
+        </div>
+
+        <h1 class="display reveal reveal-2" style="font-size: var(--mk-text-display-2xl); max-width: 17ch; margin: 0;">
+          Persistent memory<br />
+          for <em>your codebase.</em>
+        </h1>
+
+        <p class="reveal reveal-3" style="margin-top: 1.75rem; font-size: 1.25rem; color: var(--mk-text-dim); max-width: 48ch; line-height: 1.5;">
+          GitWhy indexes your repository's history with AI-inferred intent, then exposes the result over MCP, a local HTTP server, and a polished web UI. Your editor's agent answers <em style="color: var(--mk-text); font-style: italic;">"why does this exist?"</em> instantly — with citations.
+        </p>
+
+        <div class="reveal reveal-4" style="display: flex; gap: 0.75rem; margin-top: 2.5rem; flex-wrap: wrap;">
+          <a href="/playground/" class="btn btn-primary">
+            Try the playground
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
+          </a>
+          <a href="https://github.com/kamsqe/gitwhy" class="btn btn-ghost">
+            View on GitHub
+          </a>
+        </div>
+
+        <p class="reveal reveal-5" style="margin-top: 2.5rem; font-family: var(--mk-font-mono); font-size: 0.8125rem; color: var(--mk-text-faint);">
+          <span class="accent">$</span> npm install -g <span style="color: var(--mk-text-dim);">@kamsqe/gitwhy</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ §01 PITCH ═══════════════════════════════════════ -->
+    <section class="section">
+      <div class="container">
+        <div class="annotated">
+          <div class="annotation">§ 01<br />The pitch</div>
+          <div>
+            <h2 class="display" style="font-size: var(--mk-text-display-lg); max-width: 26ch; margin: 0 0 3rem;">
+              Git history holds the answers. Most of it is just <em>"fix typo".</em>
+            </h2>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 2rem;">
+              <div>
+                <div class="label" style="margin-bottom: 0.875rem;">Problem</div>
+                <p style="color: var(--mk-text-dim); line-height: 1.65;">
+                  Every developer wastes hours re-deriving why a codebase looks the way it does. Commit messages are unhelpful (<span class="mono accent" style="font-size: 0.8125rem;">fix</span>, <span class="mono accent" style="font-size: 0.8125rem;">wip</span>, <span class="mono accent" style="font-size: 0.8125rem;">major update</span>), and on-demand AI editors re-pay the analysis cost every session.
+                </p>
+              </div>
+              <div>
+                <div class="label" style="margin-bottom: 0.875rem;">Solution</div>
+                <p style="color: var(--mk-text-dim); line-height: 1.65;">
+                  Index the repository once. Reverse-engineer intent from actual diffs with an LLM. Store as a queryable SQLite + vector index. Expose over MCP, HTTP, and CLI — same backend, three surfaces.
+                </p>
+              </div>
+              <div>
+                <div class="label" style="margin-bottom: 0.875rem;">Result</div>
+                <p style="color: var(--mk-text-dim); line-height: 1.65;">
+                  Your agent answers <span class="mono emphasis" style="font-size: 0.8125rem;">why?</span> in 200ms with a commit hash and a citation. The 30-second timeout is no longer mysterious; it's <span class="mono accent" style="font-size: 0.8125rem;">a3f1b2c</span> from October.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ §02 SURFACES ═══════════════════════════════════════ -->
+    <section class="section">
+      <div class="container">
+        <div class="annotated">
+          <div class="annotation">§ 02<br />Surfaces</div>
+          <div>
+            <h2 class="display" style="font-size: var(--mk-text-display-lg); max-width: 22ch; margin: 0 0 0.75rem;">Three ways to ask.</h2>
+            <p style="color: var(--mk-text-dim); margin: 0 0 2.5rem; max-width: 54ch; line-height: 1.6;">
+              Same backend, same SQLite index. Pick the surface that fits your workflow — or use all three.
+            </p>
+
+            <div class="surfaces-grid">
+              <!-- MCP — featured -->
+              <div class="card" style="grid-area: mcp;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                  <span class="tag" style="border-color: var(--mk-accent); color: var(--mk-accent-bright);">
+                    <span class="tag-dot"></span>headline
+                  </span>
+                  <span class="label">In your AI editor</span>
+                </div>
+                <h3 class="display" style="font-size: 2rem; margin: 0 0 0.875rem;">MCP integration</h3>
+                <p style="color: var(--mk-text-dim); margin: 0 0 1.5rem; line-height: 1.6;">
+                  Add one block to Cursor, Claude Code, or Windsurf. Your editor's agent calls <span class="mono accent" style="font-size: 0.875rem;">gitwhy.why</span>, <span class="mono accent" style="font-size: 0.875rem;">gitwhy.risk</span>, <span class="mono accent" style="font-size: 0.875rem;">gitwhy.history</span> autonomously — you don't even type the tool name.
+                </p>
+                <pre style="margin-top: auto;"><code><span class="diff-add">+</span> <span style="color: var(--mk-text);">"gitwhy"</span>: &lbrace;
+    <span style="color: var(--mk-text);">"command"</span>: <span class="accent">"npx"</span>,
+    <span style="color: var(--mk-text);">"args"</span>: [<span class="accent">"@kamsqe/gitwhy"</span>, <span class="accent">"mcp"</span>]
+  &rbrace;</code></pre>
+              </div>
+
+              <!-- Web UI -->
+              <a href="/app/" class="card is-interactive" style="grid-area: web;">
+                <div class="label" style="margin-bottom: 0.875rem;">In your browser</div>
+                <h3 class="display" style="font-size: 1.5rem; margin: 0 0 0.75rem;">Web app</h3>
+                <p style="color: var(--mk-text-dim); font-size: 0.9375rem; line-height: 1.55; margin: 0 0 0.875rem; flex-grow: 1;">
+                  Eleven tabs: Ask · Risk · Related · History · Catchup · Search · Estimate · Index · Incident · Onboarding · Graph. Repo data and API key stay on your machine.
+                </p>
+                <span class="mono accent" style="font-size: 0.8125rem; display: inline-flex; align-items: center; gap: 0.375rem;">
+                  Open the app
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
+                </span>
+              </a>
+
+              <!-- CLI -->
+              <a href="/quickstart/" class="card is-interactive" style="grid-area: cli;">
+                <div class="label" style="margin-bottom: 0.875rem;">In your terminal</div>
+                <h3 class="display" style="font-size: 1.5rem; margin: 0 0 0.75rem;">CLI &amp; HTTP</h3>
+                <p style="color: var(--mk-text-dim); font-size: 0.9375rem; line-height: 1.55; margin: 0 0 0.875rem; flex-grow: 1;">
+                  One-shot commands for scripts and CI. Or run as a local HTTP server on <span class="mono" style="font-size: 0.8125rem; color: var(--mk-text);">127.0.0.1:3787</span> for custom integrations.
+                </p>
+                <span class="mono accent" style="font-size: 0.8125rem; display: inline-flex; align-items: center; gap: 0.375rem;">
+                  Quick start
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
+                </span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ §03 INSIDE ═══════════════════════════════════════ -->
+    <section class="section">
+      <div class="container">
+        <div class="annotated">
+          <div class="annotation">§ 03<br />Inside</div>
+          <div>
+            <h2 class="display" style="font-size: var(--mk-text-display-lg); max-width: 24ch; margin: 0 0 3rem;">
+              Three agents, nine tools, six analyses.
+            </h2>
+
+            <div class="bento">
+              <div class="card" style="grid-area: arch;">
+                <div class="label" style="margin-bottom: 0.875rem;">Architecture</div>
+                <h3 class="display" style="font-size: 1.5rem; margin: 0 0 1.25rem;">Three agents on shared storage</h3>
+                <div class="mono" style="font-size: 0.8125rem; line-height: 1.9; color: var(--mk-text-dim);">
+                  <div><span class="accent">Archaeologist</span><span style="color: var(--mk-text-faint);"> — indexer · enriches · embeds</span></div>
+                  <div><span class="accent">Knowledge</span><span style="color: var(--mk-text-faint);">&nbsp;&nbsp;&nbsp;&nbsp; — RAG · citations · IDK-gate at 0.4</span></div>
+                  <div><span class="accent">Insight</span><span style="color: var(--mk-text-faint);">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; — SQL · risk · bus factor · co-change</span></div>
+                  <div style="margin: 0.75rem 0; color: var(--mk-text-faint); padding-left: 0.25rem;">↓</div>
+                  <div><span class="emphasis">SQLite</span><span style="color: var(--mk-text-faint);">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; — commits · embeddings · clusters · feedback</span></div>
+                </div>
+              </div>
+
+              <div class="card" style="grid-area: tools;">
+                <div class="label" style="margin-bottom: 0.875rem;">9 MCP tools</div>
+                <h3 class="display" style="font-size: 1.5rem; margin: 0 0 1.25rem;">Each a native function call</h3>
+                <div class="mono" style="font-size: 0.75rem; line-height: 2.1; color: var(--mk-text-dim); column-count: 2; column-gap: 1rem;">
+                  {MCP_TOOLS.map((t) => <div>{t}</div>)}
+                </div>
+              </div>
+
+              <div class="card" style="grid-area: f1;">
+                <div class="label" style="margin-bottom: 0.625rem;">Post-capstone</div>
+                <h3 class="display" style="font-size: 1.25rem; margin: 0 0 0.625rem;">Incident archaeologist</h3>
+                <p style="color: var(--mk-text-dim); font-size: 0.875rem; line-height: 1.55; margin: 0;">
+                  "We had an outage at 14:30 — what changed?" Ranked candidates, hot-fixes after, <em style="color: var(--mk-text);">no causation claims</em>.
+                </p>
+              </div>
+
+              <div class="card" style="grid-area: f2;">
+                <div class="label" style="margin-bottom: 0.625rem;">Post-capstone</div>
+                <h3 class="display" style="font-size: 1.25rem; margin: 0 0 0.625rem;">Onboarding mode</h3>
+                <p style="color: var(--mk-text-dim); font-size: 0.875rem; line-height: 1.55; margin: 0;">
+                  The ten commits a new dev should actually read. Ranked by signal density — <em style="color: var(--mk-text);">not line count.</em>
+                </p>
+              </div>
+
+              <div class="card" style="grid-area: f3;">
+                <div class="label" style="margin-bottom: 0.625rem;">Post-capstone</div>
+                <h3 class="display" style="font-size: 1.25rem; margin: 0 0 0.625rem;">Co-change graph</h3>
+                <p style="color: var(--mk-text-dim); font-size: 0.875rem; line-height: 1.55; margin: 0;">
+                  Force-directed view. Single-points-of-failure visually cluster with whatever they pull along — <em style="color: var(--mk-remove); font-style: italic;">red dots tell the story.</em>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ §04 NOT ═══════════════════════════════════════ -->
+    <section class="section">
+      <div class="container">
+        <div class="annotated">
+          <div class="annotation">§ 04<br />Honest about limits</div>
+          <div>
+            <h2 class="display" style="font-size: var(--mk-text-display-lg); max-width: 26ch; margin: 0 0 1rem;">
+              What this is <em>not.</em>
+            </h2>
+            <p style="color: var(--mk-text-dim); margin: 0 0 2.5rem; max-width: 58ch; line-height: 1.6;">
+              Tools that overclaim get distrusted. Here's what GitWhy explicitly doesn't do, and what it explicitly does well.
+            </p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem;">
+              <div style="border-left: 2px solid var(--mk-remove); padding-left: 1.25rem;">
+                <div class="label" style="margin-bottom: 0.625rem; color: var(--mk-remove);">Not a code analyzer</div>
+                <p style="color: var(--mk-text-dim); font-size: 0.9375rem; line-height: 1.6; margin: 0;">
+                  Reads commit messages and diffs. Doesn't parse your AST, run linters, or judge code quality.
+                </p>
+              </div>
+              <div style="border-left: 2px solid var(--mk-remove); padding-left: 1.25rem;">
+                <div class="label" style="margin-bottom: 0.625rem; color: var(--mk-remove);">Not a blame replacement</div>
+                <p style="color: var(--mk-text-dim); font-size: 0.9375rem; line-height: 1.6; margin: 0;">
+                  <span class="mono" style="font-size: 0.8125rem; color: var(--mk-text);">git blame</span> answers <em>who</em>. GitWhy answers <em>why</em>. Complementary, not overlapping.
+                </p>
+              </div>
+              <div style="border-left: 2px solid var(--mk-remove); padding-left: 1.25rem;">
+                <div class="label" style="margin-bottom: 0.625rem; color: var(--mk-remove);">Not a causal oracle</div>
+                <p style="color: var(--mk-text-dim); font-size: 0.9375rem; line-height: 1.6; margin: 0;">
+                  When the incident tab surfaces candidates, it surfaces <em>candidates</em>. Causation stays with the human.
+                </p>
+              </div>
+              <div style="border-left: 2px solid var(--mk-add); padding-left: 1.25rem;">
+                <div class="label" style="margin-bottom: 0.625rem; color: var(--mk-add);">Local-first</div>
+                <p style="color: var(--mk-text-dim); font-size: 0.9375rem; line-height: 1.6; margin: 0;">
+                  Diffs are pre-scrubbed for secrets (12 patterns) before any cloud call. Repo stays on your disk; only diffs reach the LLM you chose.
+                </p>
+              </div>
+              <div style="border-left: 2px solid var(--mk-add); padding-left: 1.25rem;">
+                <div class="label" style="margin-bottom: 0.625rem; color: var(--mk-add);">Free-tier friendly</div>
+                <p style="color: var(--mk-text-dim); font-size: 0.9375rem; line-height: 1.6; margin: 0;">
+                  Default model is <span class="mono" style="font-size: 0.8125rem; color: var(--mk-text);">gemini-3.1-flash-lite</span>. Indexing a typical repo costs cents.
+                </p>
+              </div>
+              <div style="border-left: 2px solid var(--mk-add); padding-left: 1.25rem;">
+                <div class="label" style="margin-bottom: 0.625rem; color: var(--mk-add);">MIT-licensed</div>
+                <p style="color: var(--mk-text-dim); font-size: 0.9375rem; line-height: 1.6; margin: 0;">
+                  Open from day one. Code on GitHub, package on npm. No telemetry, no waitlist, no upsell.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ §05 GET GOING ═══════════════════════════════════════ -->
+    <section class="section">
+      <div class="container">
+        <div class="annotated">
+          <div class="annotation">§ 05<br />Get going</div>
+          <div>
+            <h2 class="display" style="font-size: var(--mk-text-display-lg); max-width: 28ch; margin: 0 0 1rem;">
+              Four commands to indexed.
+            </h2>
+            <p style="color: var(--mk-text-dim); margin: 0 0 2rem; max-width: 56ch; line-height: 1.6;">
+              From a fresh checkout to citation-backed answers in your editor.
+            </p>
+
+            <pre><code><span style="color: var(--mk-text-faint);"># 1. Install (npx works without a global install)</span>
+<span class="accent">$</span> npm install -g <span style="color: var(--mk-text);">@kamsqe/gitwhy</span>
+
+<span style="color: var(--mk-text-faint);"># 2. Initialize in your repo + set your LLM key</span>
+<span class="accent">$</span> cd /path/to/your/repo
+<span class="accent">$</span> gitwhy init
+<span class="accent">$</span> <span class="diff-add">export</span> GEMINI_API_KEY=AIza<span style="color: var(--mk-text-faint);">…</span>   <span style="color: var(--mk-text-faint);"># or OPENAI_API_KEY</span>
+
+<span style="color: var(--mk-text-faint);"># 3. Check projected cost, then index</span>
+<span class="accent">$</span> gitwhy estimate
+<span class="accent">$</span> gitwhy index <span style="color: var(--mk-text-faint);">--budget</span> 1.00
+
+<span style="color: var(--mk-text-faint);"># 4. Ask anything</span>
+<span class="accent">$</span> gitwhy why <span class="emphasis">"why does processPayment timeout at 30s?"</span></code></pre>
+
+            <p style="margin: 1.5rem 0 0; color: var(--mk-text-dim); font-size: 0.9375rem;">
+              For Cursor / Claude Code / Windsurf integration, see <a href="/mcp-setup/" style="color: var(--mk-accent-bright); border-bottom: 1px solid rgba(111, 168, 232, 0.4);">MCP setup</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ §06 PROVENANCE ═══════════════════════════════════════ -->
+    <section class="section">
+      <div class="container">
+        <div class="annotated">
+          <div class="annotation">§ 06<br />Provenance</div>
+          <div>
+            <h2 class="display" style="font-size: var(--mk-text-display-lg); max-width: 26ch; margin: 0 0 1rem;">
+              Built as a capstone. Kept honest as open source.
+            </h2>
+            <p style="color: var(--mk-text-dim); margin: 0 0 2.5rem; max-width: 60ch; line-height: 1.6;">
+              GitWhy was submitted as the final project for the EPAM Generative AI for Software Development program on <span class="mono" style="color: var(--mk-text);">2026-05-21</span>. The exact code evaluated is preserved at the <span class="mono accent">submission</span> git tag — everything since is post-capstone polish.
+            </p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;">
+              <a href="/docs/executive-summary/" class="card is-interactive">
+                <div class="label" style="margin-bottom: 0.625rem;">Deliverable 01</div>
+                <h3 class="display" style="font-size: 1.25rem; margin: 0 0 0.5rem;">Executive summary</h3>
+                <p style="color: var(--mk-text-dim); font-size: 0.875rem; line-height: 1.55; margin: 0 0 1rem; flex-grow: 1;">
+                  Business value, audience, status, roadmap.
+                </p>
+                <span class="mono accent" style="font-size: 0.8125rem;">Read →</span>
+              </a>
+              <a href="/docs/architecture/" class="card is-interactive">
+                <div class="label" style="margin-bottom: 0.625rem;">Deliverable 02</div>
+                <h3 class="display" style="font-size: 1.25rem; margin: 0 0 0.5rem;">Architecture blueprint</h3>
+                <p style="color: var(--mk-text-dim); font-size: 0.875rem; line-height: 1.55; margin: 0 0 1rem; flex-grow: 1;">
+                  System design, Mermaid diagrams, tech-stack rationale.
+                </p>
+                <span class="mono accent" style="font-size: 0.8125rem;">Read →</span>
+              </a>
+              <a href="/docs/self-review/" class="card is-interactive">
+                <div class="label" style="margin-bottom: 0.625rem;">Deliverable 03</div>
+                <h3 class="display" style="font-size: 1.25rem; margin: 0 0 0.5rem;">Self-review</h3>
+                <p style="color: var(--mk-text-dim); font-size: 0.875rem; line-height: 1.55; margin: 0 0 1rem; flex-grow: 1;">
+                  The five biggest trade-offs, what would change with more time.
+                </p>
+                <span class="mono accent" style="font-size: 0.8125rem;">Read →</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ FOOTER ═══════════════════════════════════════ -->
+    <footer style="border-top: 1px solid var(--mk-border); padding: 3.5rem 0 4rem; margin-top: 1rem;">
+      <div class="container" style="display: flex; flex-wrap: wrap; gap: 2.5rem; justify-content: space-between; align-items: flex-start;">
+        <div style="max-width: 36ch;">
+          <div style="display: flex; align-items: center; gap: 0.625rem; margin-bottom: 0.875rem;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--mk-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="6" cy="6" r="2.5" />
+              <circle cx="6" cy="18" r="2.5" />
+              <circle cx="18" cy="12" r="2.5" />
+              <path d="M6 8.5v7M8.2 6.5q5 1 6.5 5M8.2 17.5q5-1 6.5-5" />
+            </svg>
+            <span class="display" style="font-size: 1.25rem; font-weight: 500;">GitWhy</span>
+          </div>
+          <p class="mono" style="font-size: 0.75rem; color: var(--mk-text-faint); line-height: 1.7; margin: 0 0 0.625rem;">
+            // persistent memory for AI coding agents over your git history
+          </p>
+          <p style="color: var(--mk-text-faint); font-size: 0.8125rem; margin: 0;">
+            MIT-licensed. Open from day one. Built by <a href="https://github.com/kamsqe" style="color: var(--mk-text-dim); border-bottom: 1px dotted var(--mk-text-faint);">@kamsqe</a>.
+          </p>
+        </div>
+        <div style="display: flex; gap: 3.5rem; flex-wrap: wrap;">
+          <div>
+            <div class="label" style="margin-bottom: 0.875rem;">Install</div>
+            <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem;">
+              <li><a href="https://www.npmjs.com/package/@kamsqe/gitwhy" class="mono" style="color: var(--mk-text-dim); font-size: 0.8125rem;">npm package</a></li>
+              <li><a href="/quickstart/" class="mono" style="color: var(--mk-text-dim); font-size: 0.8125rem;">quickstart</a></li>
+              <li><a href="/mcp-setup/" class="mono" style="color: var(--mk-text-dim); font-size: 0.8125rem;">mcp setup</a></li>
+            </ul>
+          </div>
+          <div>
+            <div class="label" style="margin-bottom: 0.875rem;">Try</div>
+            <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem;">
+              <li><a href="/playground/" class="mono" style="color: var(--mk-text-dim); font-size: 0.8125rem;">playground</a></li>
+              <li><a href="/app/" class="mono" style="color: var(--mk-text-dim); font-size: 0.8125rem;">web app</a></li>
+              <li><a href="/demo/" class="mono" style="color: var(--mk-text-dim); font-size: 0.8125rem;">demo report</a></li>
+            </ul>
+          </div>
+          <div>
+            <div class="label" style="margin-bottom: 0.875rem;">Source</div>
+            <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem;">
+              <li><a href="https://github.com/kamsqe/gitwhy" class="mono" style="color: var(--mk-text-dim); font-size: 0.8125rem;">github</a></li>
+              <li><a href="https://github.com/kamsqe/gitwhy/blob/main/LICENSE" class="mono" style="color: var(--mk-text-dim); font-size: 0.8125rem;">MIT license</a></li>
+              <li><a href="https://github.com/kamsqe/gitwhy/issues" class="mono" style="color: var(--mk-text-dim); font-size: 0.8125rem;">file an issue</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Page-scoped styles for the bento + surfaces grids. Kept here because
+         they're layout-specific to this page; not worth shipping in
+         marketing.css where every consumer would pay for them. -->
+    <style>
+      .surfaces-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+          'mcp mcp'
+          'web cli';
+        gap: 1rem;
+      }
+
+      .surfaces-grid > [style*='grid-area: mcp'] {
+        min-height: 360px;
+      }
+
+      .bento {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 1rem;
+        grid-template-areas:
+          'arch arch arch arch arch arch arch tools tools tools tools tools'
+          'f1   f1   f1   f1   f2   f2   f2   f2   f3   f3   f3   f3';
+      }
+
+      @media (max-width: 880px) {
+        .surfaces-grid {
+          grid-template-columns: 1fr;
+          grid-template-areas:
+            'mcp'
+            'web'
+            'cli';
+        }
+        .surfaces-grid > [style*='grid-area: mcp'] {
+          min-height: auto;
+        }
+        .bento {
+          grid-template-columns: 1fr;
+          grid-template-areas:
+            'arch'
+            'tools'
+            'f1'
+            'f2'
+            'f3';
+        }
+      }
+
+      [data-nav-link]:hover {
+        color: var(--mk-text);
+      }
+    </style>
+
+  </body>
+</html>

@@ -1,0 +1,339 @@
+/*
+ * Marketing-surface design tokens.
+ *
+ * Scoped to `.marketing` so this stylesheet doesn't leak into either:
+ *   - the React app under /app/ (which has its own `gw-*` palette in
+ *     app.css), or
+ *   - the Starlight /docs/* pages (which use `--sl-*` variables).
+ *
+ * Aesthetic direction: editorial-technical. Serif display headlines for
+ * confidence + warmth, geometric sans for body precision, monospace for
+ * code and metadata. The page reads like a technical dossier or research
+ * paper, with section numbers in the margin and asymmetric panels. Color
+ * restraint: deepened dark base, blue accent preserved, amber emphasis
+ * used sparingly. Diff-color (+green/-red) carries semantic weight in
+ * the trade-offs section — not just decoration.
+ */
+
+/* ─── Web fonts ─── */
+/* Fraunces (display) + Plus Jakarta Sans (body) + JetBrains Mono (code).
+ * Variable fonts to keep payload bounded; opsz on Fraunces lets the
+ * display sizes look properly tuned at the large scales we use. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+.marketing {
+  /* ─── Palette ─── */
+  --mk-bg: #0a0d12;
+  --mk-bg-elevated: #13171f;
+  --mk-bg-tint: #0f131a;
+  --mk-border: #1f262e;
+  --mk-border-bright: #2a323d;
+  --mk-text: #f4f4f5;
+  --mk-text-dim: #a1a1aa;
+  --mk-text-faint: #71717a;
+
+  --mk-accent: #2a6fc9;
+  --mk-accent-bright: #6fa8e8;
+  --mk-emphasis: #fbbf24;          /* warm amber, used sparingly */
+  --mk-add: #10b981;               /* git diff green */
+  --mk-remove: #ef4444;            /* git diff red */
+
+  /* ─── Type ─── */
+  --mk-font-display: 'Fraunces', 'Times New Roman', Georgia, serif;
+  --mk-font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --mk-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+
+  /* Fluid type scale via clamp(min, preferred, max) — the display sizes
+   * scale with viewport so the hero never overflows on phones nor
+   * underwhelms on big screens. */
+  --mk-text-display-2xl: clamp(3rem, 8vw, 6.25rem);
+  --mk-text-display-xl: clamp(2.25rem, 5.5vw, 4rem);
+  --mk-text-display-lg: clamp(2rem, 4.5vw, 3.25rem);
+  --mk-text-display: clamp(1.5rem, 3vw, 2.25rem);
+
+  /* ─── Motion ─── */
+  --mk-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ─── Base ─── */
+  background: var(--mk-bg);
+  color: var(--mk-text);
+  font-family: var(--mk-font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  letter-spacing: -0.005em;
+  min-height: 100vh;
+  /* Subtle grain to lift the dark background out of "flat" territory. */
+  background-image:
+    radial-gradient(circle at 20% 0%, rgba(42, 111, 201, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(251, 191, 36, 0.025) 0%, transparent 50%);
+}
+
+.marketing *,
+.marketing *::before,
+.marketing *::after {
+  box-sizing: border-box;
+}
+
+.marketing a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.18s var(--mk-ease-out);
+}
+
+/* ─── Typography utilities ─── */
+.marketing .display {
+  font-family: var(--mk-font-display);
+  font-weight: 400;
+  font-optical-sizing: auto;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.marketing .display em {
+  font-style: italic;
+  font-feature-settings: 'ss01' 1; /* swashy italics — Fraunces specialty */
+  color: var(--mk-accent-bright);
+}
+
+.marketing .mono {
+  font-family: var(--mk-font-mono);
+  font-feature-settings: 'liga' 0;
+}
+
+.marketing .label {
+  font-family: var(--mk-font-mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--mk-text-faint);
+}
+
+.marketing .accent { color: var(--mk-accent-bright); }
+.marketing .emphasis { color: var(--mk-emphasis); }
+.marketing .diff-add { color: var(--mk-add); }
+.marketing .diff-remove { color: var(--mk-remove); }
+
+/* Inline pill — used for version/license tags */
+.marketing .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid var(--mk-border);
+  border-radius: 999px;
+  font-family: var(--mk-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  color: var(--mk-text-dim);
+  background: var(--mk-bg-elevated);
+}
+
+.marketing .tag-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--mk-accent);
+  display: inline-block;
+}
+
+.marketing .tag-dot--amber { background: var(--mk-emphasis); }
+
+/* ─── Layout primitives ─── */
+.marketing .container {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+@media (max-width: 720px) {
+  .marketing .container { padding: 0 1.25rem; }
+}
+
+.marketing .section {
+  padding: 5.5rem 0;
+  border-top: 1px solid var(--mk-border);
+}
+
+@media (max-width: 720px) {
+  .marketing .section { padding: 3.5rem 0; }
+}
+
+/* Annotated layout: section number in the left gutter, content on the
+ * right. On wide screens the annotation is sticky so it persists as the
+ * reader scrolls — matches the research-paper feel. Collapses to a
+ * stacked single column under 880px. */
+.marketing .annotated {
+  display: grid;
+  grid-template-columns: 9rem 1fr;
+  gap: 3rem;
+  align-items: start;
+}
+
+.marketing .annotated .annotation {
+  font-family: var(--mk-font-mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--mk-text-faint);
+  padding-top: 0.625rem;
+  position: sticky;
+  top: 1.5rem;
+}
+
+@media (max-width: 880px) {
+  .marketing .annotated {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .marketing .annotated .annotation {
+    position: static;
+    padding-top: 0;
+  }
+}
+
+/* ─── Buttons ─── */
+.marketing .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.375rem;
+  font-family: var(--mk-font-body);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  transition: all 0.18s var(--mk-ease-out);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.marketing .btn-primary {
+  background: var(--mk-accent);
+  color: white;
+  border-color: var(--mk-accent);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1) inset, 0 8px 24px rgba(42, 111, 201, 0.18);
+}
+
+.marketing .btn-primary:hover {
+  background: var(--mk-accent-bright);
+  border-color: var(--mk-accent-bright);
+  transform: translateY(-1px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.15) inset, 0 12px 28px rgba(42, 111, 201, 0.28);
+}
+
+.marketing .btn-ghost {
+  background: transparent;
+  color: var(--mk-text);
+  border-color: var(--mk-border-bright);
+}
+
+.marketing .btn-ghost:hover {
+  border-color: var(--mk-text-dim);
+  background: var(--mk-bg-elevated);
+}
+
+/* ─── Cards ─── */
+.marketing .card {
+  background: var(--mk-bg-elevated);
+  border: 1px solid var(--mk-border);
+  border-radius: 12px;
+  padding: 1.75rem;
+  transition: border-color 0.2s var(--mk-ease-out), transform 0.2s var(--mk-ease-out);
+  display: flex;
+  flex-direction: column;
+}
+
+a.card:hover,
+.card.is-interactive:hover {
+  border-color: var(--mk-border-bright);
+  transform: translateY(-2px);
+}
+
+/* ─── Code blocks ─── */
+.marketing pre,
+.marketing code {
+  font-family: var(--mk-font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  font-feature-settings: 'liga' 0;
+}
+
+.marketing pre {
+  background: var(--mk-bg-tint);
+  border: 1px solid var(--mk-border);
+  border-radius: 8px;
+  padding: 1.125rem 1.375rem;
+  overflow-x: auto;
+  color: var(--mk-text-dim);
+  /* Subtle inner glow on the code-block edge — feels like an artifact. */
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+.marketing pre code { color: var(--mk-text); }
+
+/* ─── Animation: staggered reveal on load ─── */
+@keyframes mk-reveal {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.marketing .reveal {
+  opacity: 0;
+  animation: mk-reveal 0.85s var(--mk-ease-out) forwards;
+}
+
+.marketing .reveal-1 { animation-delay: 0.05s; }
+.marketing .reveal-2 { animation-delay: 0.12s; }
+.marketing .reveal-3 { animation-delay: 0.22s; }
+.marketing .reveal-4 { animation-delay: 0.34s; }
+.marketing .reveal-5 { animation-delay: 0.48s; }
+.marketing .reveal-6 { animation-delay: 0.64s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .marketing .reveal {
+    opacity: 1;
+    animation: none;
+    transform: none;
+  }
+}
+
+/* ─── Hero grid texture (very subtle blueprint vibe) ─── */
+.marketing .hero {
+  position: relative;
+  overflow: hidden;
+  padding-top: 5rem;
+  padding-bottom: 6.5rem;
+  border-top: none;
+}
+
+.marketing .hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(42, 111, 201, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(42, 111, 201, 0.05) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: radial-gradient(ellipse 70% 60% at 40% 20%, black 30%, transparent 80%);
+  pointer-events: none;
+}
+
+/* Section divider mark — small notch on the upper border, like a research
+ * paper section marker. Adds rhythm without intruding. */
+.marketing .section::before {
+  content: '';
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mk-border-bright);
+  margin: -5.5rem auto 5.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 720px) {
+  .marketing .section::before { margin: -3.5rem auto 3.5rem; }
+}
