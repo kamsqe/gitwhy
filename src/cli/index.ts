@@ -4,6 +4,7 @@ import { VERSION } from '../version.js';
 import { runAliasesList, runAliasesSuggest } from './commands/aliases.js';
 import { runCatchupCommand } from './commands/catchup.js';
 import { runCommitCommand } from './commands/commit.js';
+import { runContextForPrCommand } from './commands/context-for-pr.js';
 import { runEstimate } from './commands/estimate.js';
 import {
   recentFeedback,
@@ -270,6 +271,23 @@ program
         `  ${r.path.padEnd(50)} ${r.coCommits}/${r.thisFileCommits} commits  (${(r.forwardConfidence * 100).toFixed(0)}%)\n`,
       );
     }
+  });
+
+program
+  .command('context-for-pr')
+  .description('PR review context: per-file risk, top contributors, co-changes — used by gitwhy-bot in CI')
+  .option('-b, --branch <branch>', 'branch to analyze (files derived from `git diff <base>...<branch>`)')
+  .option('--base <base>', 'base branch to diff against (default: main)')
+  .option('-f, --files <files...>', 'explicit file list (mutually exclusive with --branch)')
+  .action(async (opts: { branch?: string; base?: string; files?: string[] }) => {
+    const out = await runContextForPrCommand({
+      cwd: process.cwd(),
+      ...(opts.branch !== undefined && { branch: opts.branch }),
+      ...(opts.base !== undefined && { base: opts.base }),
+      ...(opts.files !== undefined && opts.files.length > 0 && { files: opts.files }),
+    });
+    process.stdout.write(out);
+    process.stdout.write('\n');
   });
 
 program

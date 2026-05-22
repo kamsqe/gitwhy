@@ -52,6 +52,33 @@ docker run --rm -v $(pwd):/repo -p 3787:3787 \
 
 The container mounts your repo at `/repo`, exposes the API on `127.0.0.1:3787`, and binds inside the container to `0.0.0.0` so the host can reach it. Multi-arch (linux/amd64, linux/arm64).
 
+### Drop-in GitHub Action (PR review bot)
+
+Add to any repo's `.github/workflows/gitwhy.yml`:
+
+```yaml
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: ${{ github.event.pull_request.head.sha }}, fetch-depth: 200 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22.x }
+      - uses: kamsqe/gitwhy/.github/actions/pr-review@web-ui
+        with:
+          gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
+          budget-usd: '0.50'
+```
+
+Every PR gets a sticky comment with per-file risk, top contributors, recent commits, and co-changes. Incremental indexing (caches `.gitwhy/` between runs) + a hard `--budget` cap mean each PR costs pennies after the first run.
+
 ### MCP integration (the headline feature)
 
 Add to your AI editor's MCP config (Cursor, Claude Code, Windsurf, etc.):

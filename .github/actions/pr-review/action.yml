@@ -1,0 +1,126 @@
+name: GitWhy PR review
+description: Index this repo's history and post AI-generated PR context as a sticky comment.
+
+# Usage from another repo:
+#
+#   - uses: kamsqe/gitwhy/.github/actions/pr-review@web-ui
+#     with:
+#       gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
+#
+# What this does:
+#   1. Restore the indexed .gitwhy/ cache (rebuilds incrementally — D.1)
+#   2. Init if missing, then `gitwhy index --since <scope> --budget <cap>`
+#   3. Run `gitwhy context-for-pr --branch <head> --base <base>`
+#   4. Post / update a sticky PR comment with the output
+#
+# Cost discipline: incremental indexing (D.1) + .gitwhyignore (D.2) + a
+# hard --budget cap mean each PR run only spends pennies after the first.
+# The first run is the expensive one; subsequent runs only enrich new
+# commits since the last cache hit.
+
+inputs:
+  gemini-api-key:
+    description: Gemini API key — leaves your repo over HTTPS to Google's API only. Add as a repo secret.
+    required: false
+  openai-api-key:
+    description: OpenAI API key — alternative to Gemini.
+    required: false
+  budget-usd:
+    description: Hard cap on LLM spend per workflow run (USD).
+    required: false
+    default: '1.00'
+  scope:
+    description: Time window for indexing (anything `gitwhy index --since` accepts).
+    required: false
+    default: '12 months ago'
+  base:
+    description: Base branch to diff against. Defaults to the PR's base.
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Install @kamsqe/gitwhy
+      shell: bash
+      # Use npx so we always pull the latest published version. The
+      # @latest tag avoids stale caches when we ship a fix.
+      run: |
+        npm install -g @kamsqe/gitwhy@latest
+        gitwhy --version
+
+    - name: Restore index cache
+      uses: actions/cache@v4
+      with:
+        # The whole .gitwhy/ directory (config + SQLite + WAL files).
+        # Key includes the workflow file hash so a workflow edit invalidates.
+        path: .gitwhy
+        key: gitwhy-${{ github.repository }}-${{ runner.os }}-v1
+        restore-keys: |
+          gitwhy-${{ github.repository }}-${{ runner.os }}-
+
+    - name: Initialize if first run
+      shell: bash
+      run: |
+        if [ ! -f .gitwhy/config.json ]; then
+          gitwhy init
+        fi
+
+    - name: Incremental index
+      shell: bash
+      env:
+        GEMINI_API_KEY: ${{ inputs.gemini-api-key }}
+        OPENAI_API_KEY: ${{ inputs.openai-api-key }}
+      run: |
+        gitwhy index \
+          --since "${{ inputs.scope }}" \
+          --budget ${{ inputs.budget-usd }}
+
+    - name: Determine base branch
+      id: base
+      shell: bash
+      run: |
+        BASE="${{ inputs.base }}"
+        if [ -z "$BASE" ]; then
+          BASE="${{ github.event.pull_request.base.ref }}"
+        fi
+        if [ -z "$BASE" ]; then
+          BASE="main"
+        fi
+        echo "base=$BASE" >> "$GITHUB_OUTPUT"
+
+    - name: Generate PR context
+      shell: bash
+      env:
+        GEMINI_API_KEY: ${{ inputs.gemini-api-key }}
+        OPENAI_API_KEY: ${{ inputs.openai-api-key }}
+      run: |
+        # `git fetch` the base ref so the diff resolves on shallow clones.
+        git fetch --depth=200 origin "${{ steps.base.outputs.base }}" || true
+
+        gitwhy context-for-pr \
+          --branch "${{ github.event.pull_request.head.ref || github.head_ref }}" \
+          --base "${{ steps.base.outputs.base }}" \
+          > /tmp/gitwhy-pr-context.txt
+
+        # Wrap output in a markdown block + signature so the sticky-comment
+        # action can find and update it on subsequent runs.
+        {
+          echo "<!-- gitwhy-bot:pr-review -->"
+          echo "## 🔍 GitWhy review context"
+          echo
+          echo "_Powered by [gitwhy](https://github.com/kamsqe/gitwhy) — pre-indexed git history with AI-inferred intent._"
+          echo
+          echo '```'
+          cat /tmp/gitwhy-pr-context.txt
+          echo '```'
+        } > /tmp/gitwhy-pr-comment.md
+
+    - name: Post / update sticky PR comment
+      uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        # `header` is what makes the comment sticky — subsequent runs find
+        # by header and update in place instead of creating a new comment
+        # on every push.
+        header: gitwhy-bot:pr-review
+        path: /tmp/gitwhy-pr-comment.md

@@ -1,0 +1,52 @@
+name: GitWhy PR review (dogfood)
+
+# Demonstrates the .github/actions/pr-review composite action by running
+# it against gitwhy's own PRs. Other repos can adopt the same workflow
+# by copying this file (with the `uses:` line pointing at the
+# kamsqe/gitwhy/.github/actions/pr-review composite action).
+#
+# The pattern: pull_request_target lets the action run with full repo
+# permissions (needed to comment on PRs) without exposing secrets to
+# fork code. We explicitly check out github.head_ref so the diff
+# resolves against the PR's actual content.
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read         # checkout
+  pull-requests: write   # post comment
+
+# Don't pile up runs when a PR pushes 10 commits in a row — cancel the
+# in-flight run and run the latest. Different PRs are independent groups.
+concurrency:
+  group: gitwhy-pr-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    # Skip without secret — keeps forks from failing loudly when they
+    # don't have the API key configured.
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          # Need enough history for `gitwhy index` to walk recent commits.
+          # Default fetch-depth=1 won't work.
+          fetch-depth: 200
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+
+      - name: Run GitWhy PR review
+        uses: ./.github/actions/pr-review
+        with:
+          gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
+          budget-usd: '0.50'
+          scope: '12 months ago'
