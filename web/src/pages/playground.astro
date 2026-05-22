@@ -1,0 +1,28 @@
+---
+import '../assets/app.css';
+import { Playground } from '../components/playground/Playground';
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GitWhy — Playground</title>
+    <meta
+      name="description"
+      content="Try GitWhy on real-world open-source repositories without installing anything. Pre-indexed databases run client-side via WebAssembly SQLite — your queries stay in your browser."
+    />
+    <link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body class="gw-app">
+    <Playground client:only="react" />
+    <noscript>
+      <div style="padding: 2rem; max-width: 600px; margin: 4rem auto; color: #e5e7eb; font-family: system-ui;">
+        <h1>JavaScript required</h1>
+        <p>The playground loads a SQLite database in your browser via WebAssembly.</p>
+        <p>Enable JavaScript, or use the CLI directly: <code>npx gitwhy why "..."</code></p>
+      </div>
+    </noscript>
+  </body>
+</html>
