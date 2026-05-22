@@ -16,6 +16,12 @@ export interface Citation {
   readonly authorName: string;
   readonly originalMessage: string;
   readonly enrichedSummary: string | null;
+  /**
+   * Indexer's category for this commit. Lets the UI render mega-commits
+   * with the structured per-module decomposition view instead of the
+   * concatenated flat summary.
+   */
+  readonly category: string;
 }
 
 export interface QueryOptions {
@@ -137,6 +143,7 @@ export function createKnowledgeAgent(options: KnowledgeAgentOptions): KnowledgeA
           authorName: stored.authorName,
           originalMessage: firstLine(stored.message),
           enrichedSummary: stored.enrichedSummary,
+          category: stored.category,
         });
       }
 

@@ -4,6 +4,7 @@ import { formatElapsedHint, useElapsed } from '../lib/useElapsed';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { DiffViewer } from '../ui/DiffViewer';
+import { MegaDecompositionView } from '../ui/MegaDecompositionView';
 import { Spinner } from '../ui/Spinner';
 import { ErrorCard } from './RiskTab';
 
@@ -93,7 +94,10 @@ export function SearchTab() {
                   </span>
                 </div>
                 {hit.enrichedSummary ? (
-                  <p className="mt-2 text-sm leading-relaxed text-gw-text">{hit.enrichedSummary}</p>
+                  <MegaDecompositionView
+                    enrichedSummary={hit.enrichedSummary}
+                    category={hit.category}
+                  />
                 ) : (
                   <p className="mt-2 text-sm italic text-gw-text-dim">
                     {hit.originalMessage.split('\n', 1)[0]}

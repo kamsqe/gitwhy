@@ -420,6 +420,7 @@ interface CommitWithEmbeddingRow {
   committed_at: number;
   message: string;
   enriched_summary: string | null;
+  category: string;
   embedding: Uint8Array;
   dimensions: number;
 }
@@ -441,7 +442,7 @@ async function buildAsk(
   const rows = queryAll<CommitWithEmbeddingRow>(
     db,
     `SELECT c.hash, c.short_hash, c.author_name, c.committed_at, c.message,
-            c.enriched_summary, e.embedding, e.dimensions
+            c.enriched_summary, c.category, e.embedding, e.dimensions
      FROM commit_embeddings e
      INNER JOIN commits c ON c.hash = e.commit_hash`,
   );
@@ -484,6 +485,7 @@ async function buildAsk(
     authorName: t.row.author_name,
     originalMessage: t.row.message,
     enrichedSummary: t.row.enriched_summary,
+    category: t.row.category,
   }));
 
   const prompt = buildPrompt(question, top);

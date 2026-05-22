@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { ConfidenceBadge } from '../ui/ConfidenceBadge';
 import { DiffViewer } from '../ui/DiffViewer';
+import { MegaDecompositionView } from '../ui/MegaDecompositionView';
 import { Spinner } from '../ui/Spinner';
 
 export function AskTab() {
@@ -121,7 +122,10 @@ function AnswerView({ result }: { result: WhyResponse }) {
                 </span>
               </div>
               {c.enrichedSummary && (
-                <p className="mt-2 text-sm leading-relaxed text-gw-text">{c.enrichedSummary}</p>
+                <MegaDecompositionView
+                  enrichedSummary={c.enrichedSummary}
+                  category={c.category}
+                />
               )}
               {!c.enrichedSummary && (
                 <p className="mt-2 text-sm italic text-gw-text-dim">

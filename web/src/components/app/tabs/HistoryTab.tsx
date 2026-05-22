@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { api, type HistoryCommit, type HistoryResponse } from '../lib/api';
 import { Card } from '../ui/Card';
 import { DiffViewer } from '../ui/DiffViewer';
+import { MegaDecompositionView } from '../ui/MegaDecompositionView';
 import { ErrorCard, PathInputCard } from './RiskTab';
 
 export function HistoryTab() {
@@ -80,9 +81,10 @@ function CommitCard({ commit }: { commit: HistoryCommit }) {
         <CategoryBadge category={commit.category} />
       </div>
       {commit.enrichedSummary && (
-        <p className="mt-2 text-sm leading-relaxed text-gw-text">
-          {commit.enrichedSummary}
-        </p>
+        <MegaDecompositionView
+          enrichedSummary={commit.enrichedSummary}
+          category={commit.category}
+        />
       )}
       <p className={`text-xs italic ${commit.enrichedSummary ? 'mt-2 text-gw-text-faint' : 'mt-2 text-gw-text-dim'}`}>
         {commit.originalMessage.split('\n', 1)[0]}

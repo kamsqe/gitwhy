@@ -54,6 +54,8 @@ export interface Citation {
   authorName: string;
   originalMessage: string;
   enrichedSummary: string | null;
+  /** Optional — present on Ask citations / Search hits when the backend has it. */
+  category?: string | null;
 }
 
 export interface WhyResponse {
@@ -131,6 +133,7 @@ export interface SearchHit {
   authorName: string;
   originalMessage: string;
   enrichedSummary: string | null;
+  category?: string | null;
 }
 
 export interface SearchResponse {

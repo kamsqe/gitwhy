@@ -15,6 +15,12 @@ export interface SearchHit {
   authorName: string;
   originalMessage: string;
   enrichedSummary: string | null;
+  /**
+   * The indexer's category for this commit. Surfaced so the UI can render
+   * mega-commits with the structured per-module decomposition rather than
+   * the flat concatenated summary.
+   */
+  category: string;
 }
 
 const searchInputSchema = z.object({
@@ -96,6 +102,7 @@ export async function runSearch(
       authorName: stored.authorName,
       originalMessage: stored.message,
       enrichedSummary: stored.enrichedSummary,
+      category: stored.category,
     });
   }
   return results;
