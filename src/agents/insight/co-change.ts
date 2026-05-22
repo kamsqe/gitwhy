@@ -60,6 +60,11 @@ export function findRelatedFiles(
 
   if (baseRow.c === 0) return [];
 
+  // Filter out excluded files (lockfiles, dist/, etc.) from the co-change
+  // result set — they co-change with everything by design and would dominate
+  // the rankings. The input path is still queried as-is (so `gitwhy related
+  // pnpm-lock.yaml` works if you really want it), only the OTHER side of the
+  // join is filtered.
   const rows = db
     .prepare(`
       SELECT cf2.path AS other_path,
@@ -75,6 +80,7 @@ export function findRelatedFiles(
       INNER JOIN commit_files cf2 ON cf2.commit_hash = cf1.commit_hash AND cf2.path != cf1.path
       INNER JOIN commits c ON c.hash = cf1.commit_hash
       WHERE cf1.path = @path
+        AND cf2.excluded = 0
         AND c.category NOT IN ('merge', 'bot', 'formatting')
       GROUP BY cf2.path
       HAVING co_commits >= @min_co

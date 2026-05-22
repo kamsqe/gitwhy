@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { loadConfig, resolvePaths } from '../../config/loader.js';
 import { createGitReader, gitReaderOptionsFromConfig } from '../../indexer/git-reader.js';
+import { loadIgnoreMatcher } from '../../indexer/ignore-matcher.js';
 import { indexRepo } from '../../indexer/indexer.js';
 import type { IndexProgress, IndexResult } from '../../indexer/indexer.js';
 import { resolveLlmFromEnv } from '../../mcp/runtime.js';
@@ -96,12 +97,15 @@ export async function runIndexCommand(options: IndexCommandOptions): Promise<Ind
     ? { ...config, budget: { ...config.budget, maxUsd: options.budgetUsd } }
     : config;
 
+  const ignoreMatcher = loadIgnoreMatcher(cwd);
+
   let lastLogged = 0;
   const result = await indexRepo({
     reader,
     db,
     llm,
     config: effectiveConfig,
+    ignoreMatcher,
     ...(options.model !== undefined && { enrichmentModel: options.model }),
     ...(options.signal !== undefined && { signal: options.signal }),
     onProgress: (p: Readonly<IndexProgress>) => {

@@ -20,8 +20,28 @@ export function openDatabase(options: OpenDatabaseOptions): DatabaseType {
   const db = new Database(options.memory === true ? ':memory:' : options.path);
   if (options.skipSchema !== true) {
     db.exec(readSchema());
+    applyMigrations(db);
   }
   return db;
+}
+
+/**
+ * Idempotent in-place migrations for installs that opened the DB with an
+ * older schema. We additive-only: never drop columns, never reorder. Each
+ * migration checks PRAGMA table_info to decide whether to run.
+ *
+ * If you add a migration, also bump the SQL file's schema_version row so
+ * fresh DBs and migrated DBs converge to the same state.
+ */
+function applyMigrations(db: DatabaseType): void {
+  // commit_files.excluded — added for .gitwhyignore filtering (Phase D.2).
+  const cols = db.prepare(`PRAGMA table_info(commit_files)`).all() as Array<{
+    name: string;
+  }>;
+  const hasExcluded = cols.some((c) => c.name === 'excluded');
+  if (!hasExcluded) {
+    db.exec(`ALTER TABLE commit_files ADD COLUMN excluded INTEGER NOT NULL DEFAULT 0`);
+  }
 }
 
 export function readSchema(): string {

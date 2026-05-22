@@ -13,6 +13,7 @@ import { registerBuiltinCategorizers } from './categorizers/builtin.js';
 import { clusterCommits } from './commit-clusterer.js';
 import { analyzeDiff, isFormattingOnlyDiff } from './diff-analyzer.js';
 import type { GitReader } from './git-reader.js';
+import type { IgnoreMatcher } from './ignore-matcher.js';
 import { decomposeMegaCommit } from './mega-commit-decomposer.js';
 import { estimateCostUsd } from './pricing.js';
 import type { CommitCategory, CommitInfo } from './types.js';
@@ -43,6 +44,13 @@ export interface IndexerOptions {
   readonly skipEmbeddings?: boolean;
   /** AbortSignal for cooperative cancellation between commits. */
   readonly signal?: AbortSignal;
+  /**
+   * Filter commit_files rows on insert: any file matching the matcher gets
+   * excluded=1 in storage, which aggregation queries (bus factor, hotspots,
+   * co-change) skip. Path-explicit queries (`gitwhy risk pnpm-lock.yaml`)
+   * still return the row — the user asked for it.
+   */
+  readonly ignoreMatcher?: IgnoreMatcher;
 }
 
 export interface IndexResult {
@@ -115,6 +123,7 @@ export async function indexRepo(options: IndexerOptions): Promise<IndexResult> {
       commit,
       category: effectiveCategory,
       categoryReason: effectiveReason,
+      ...(options.ignoreMatcher !== undefined && { ignoreMatcher: options.ignoreMatcher }),
     });
 
     if (effectiveCategory === 'micro') {
@@ -163,12 +172,17 @@ export async function indexRepo(options: IndexerOptions): Promise<IndexResult> {
     categoryByHash.set(commit.hash, effectiveCategory);
 
     // Re-upsert with enrichment results (COALESCE preserves non-null values).
+    // Note: must re-pass ignoreMatcher here too — the ON CONFLICT DO UPDATE
+    // clause on commit_files refreshes the excluded column from the values
+    // provided in THIS upsert. Without the matcher we'd overwrite excluded=1
+    // back to 0 and aggregation queries would see lockfiles again.
     upsertCommit(db, {
       commit,
       category: effectiveCategory,
       categoryReason: effectiveReason,
       ...(enrichedSummary !== undefined && { enrichedSummary }),
       ...(enrichmentModelUsed !== undefined && { enrichmentModel: enrichmentModelUsed }),
+      ...(options.ignoreMatcher !== undefined && { ignoreMatcher: options.ignoreMatcher }),
     });
 
     if (enrichedSummary !== undefined && options.skipEmbeddings !== true) {
@@ -228,6 +242,7 @@ export async function indexRepo(options: IndexerOptions): Promise<IndexResult> {
       commit,
       category: 'micro',
       categoryReason: 'small + vague (clustered)',
+      ...(options.ignoreMatcher !== undefined && { ignoreMatcher: options.ignoreMatcher }),
     });
   }
 

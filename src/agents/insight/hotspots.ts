@@ -57,6 +57,7 @@ export function getHotspots(db: DatabaseType, options: HotspotOptions = {}): Hot
       INNER JOIN commits c ON c.hash = cf.commit_hash
       WHERE c.category NOT IN ('merge', 'bot', 'formatting')
         AND cf.is_binary = 0
+        AND cf.excluded = 0
         AND cf.path LIKE @path_filter
       GROUP BY cf.path
       HAVING recent_commits > 0

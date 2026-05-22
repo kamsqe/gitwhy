@@ -148,6 +148,47 @@ describe('indexing job manager', () => {
     }
   });
 
+  it('excludes lockfiles from path autocomplete by default (.gitwhyignore)', async () => {
+    const fresh = createTempRepo();
+    try {
+      // A commit that touches a real source file alongside a lockfile.
+      fresh.commit({
+        message: 'add feature + bump deps',
+        files: {
+          'src/feature.ts': 'export const x = 1;\n',
+          'pnpm-lock.yaml': 'lockfileVersion: 9\n',
+        },
+        date: '2026-01-01T10:00:00Z',
+      });
+      await runInit({ cwd: fresh.path });
+
+      // Index it once so commit_files rows are written with excluded set.
+      startJob({ cwd: fresh.path, provider: 'mock' });
+      await waitForEvent((e) => e.type === 'done' || e.type === 'failed');
+
+      const localApp = createApp({ cwd: fresh.path });
+
+      // Path autocomplete should return src/feature.ts but NOT pnpm-lock.yaml.
+      const res = await localApp.request('/api/paths?q=');
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { paths: string[] };
+      expect(body.paths).toContain('src/feature.ts');
+      expect(body.paths).not.toContain('pnpm-lock.yaml');
+
+      // ...but explicit-path queries still return the row when asked.
+      const riskRes = await localApp.request('/api/risk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: 'pnpm-lock.yaml' }),
+      });
+      expect(riskRes.status).toBe(200);
+      // Risk's bus factor query is path-anchored, not aggregation, so the row
+      // is still reachable — the user explicitly asked for it.
+    } finally {
+      fresh.cleanup();
+    }
+  });
+
   it('full=true bypasses incremental and re-walks everything', async () => {
     const fresh = createTempRepo();
     try {

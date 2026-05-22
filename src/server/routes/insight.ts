@@ -172,11 +172,14 @@ export function registerInsightRoutes(app: Hono): void {
     const trimmed = q.trim();
 
     // Empty query: just return some recent-touched paths so the dropdown
-    // has something useful before the user types anything.
+    // has something useful before the user types anything. Excludes
+    // .gitwhyignore-matched files (lockfiles, dist/, etc.) so users don't
+    // see noise in their suggestions.
     if (trimmed === '') {
       const rows = runtime.db
         .prepare(
           `SELECT path FROM commit_files
+           WHERE excluded = 0
            GROUP BY path
            ORDER BY MAX(rowid) DESC
            LIMIT ?`,
@@ -188,7 +191,8 @@ export function registerInsightRoutes(app: Hono): void {
     const rows = runtime.db
       .prepare(
         `SELECT DISTINCT path FROM commit_files
-         WHERE path LIKE '%' || ? || '%'
+         WHERE excluded = 0
+           AND path LIKE '%' || ? || '%'
          ORDER BY
            CASE WHEN path LIKE ? || '%' THEN 0 ELSE 1 END,
            path

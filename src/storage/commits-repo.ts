@@ -1,5 +1,6 @@
 import type { Database as DatabaseType } from 'better-sqlite3';
 import type { CommitCluster } from '../indexer/commit-clusterer.js';
+import type { IgnoreMatcher } from '../indexer/ignore-matcher.js';
 import type {
   CommitCategory,
   CommitInfo,
@@ -11,6 +12,8 @@ export interface UpsertCommitInput {
   readonly categoryReason: string;
   readonly enrichedSummary?: string;
   readonly enrichmentModel?: string;
+  /** When provided, sets `excluded = 1` on matching commit_files rows. */
+  readonly ignoreMatcher?: IgnoreMatcher;
 }
 
 export interface StoredCommit {
@@ -69,18 +72,24 @@ export function upsertCommit(db: DatabaseType, input: UpsertCommitInput): void {
       indexed_at = excluded.indexed_at
   `);
 
+  // Note: the column is named `excluded` and SQLite also uses `excluded` as
+  // a keyword in ON CONFLICT clauses to refer to the would-be-inserted row.
+  // To avoid the collision in the UPDATE SET we qualify with table alias on
+  // the right-hand side. (The schema column name stays — renaming would be
+  // a breaking migration.)
   const fileStmt = db.prepare(`
     INSERT INTO commit_files (
-      commit_hash, path, old_path, status, insertions, deletions, is_binary
+      commit_hash, path, old_path, status, insertions, deletions, is_binary, excluded
     ) VALUES (
-      @commit_hash, @path, @old_path, @status, @insertions, @deletions, @is_binary
+      @commit_hash, @path, @old_path, @status, @insertions, @deletions, @is_binary, @excluded
     )
     ON CONFLICT(commit_hash, path) DO UPDATE SET
       old_path = excluded.old_path,
       status = excluded.status,
       insertions = excluded.insertions,
       deletions = excluded.deletions,
-      is_binary = excluded.is_binary
+      is_binary = excluded.is_binary,
+      excluded = excluded.excluded
   `);
 
   const txn = db.transaction(() => {
@@ -110,6 +119,7 @@ export function upsertCommit(db: DatabaseType, input: UpsertCommitInput): void {
         insertions: f.insertions,
         deletions: f.deletions,
         is_binary: f.isBinary ? 1 : 0,
+        excluded: input.ignoreMatcher?.isExcluded(f.path) === true ? 1 : 0,
       });
     }
   });

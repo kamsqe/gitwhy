@@ -44,11 +44,13 @@ CREATE TABLE IF NOT EXISTS commit_files (
     insertions  INTEGER NOT NULL,
     deletions   INTEGER NOT NULL,
     is_binary   INTEGER NOT NULL,      -- 0 or 1
+    excluded    INTEGER NOT NULL DEFAULT 0,  -- 1 if matched by .gitwhyignore (Phase D.2)
     PRIMARY KEY (commit_hash, path),
     FOREIGN KEY (commit_hash) REFERENCES commits(hash) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_commit_files_path ON commit_files(path);
+CREATE INDEX IF NOT EXISTS idx_commit_files_excluded ON commit_files(excluded);
 
 -- Clustering: groups of micro-commits analyzed together.
 CREATE TABLE IF NOT EXISTS commit_clusters (
