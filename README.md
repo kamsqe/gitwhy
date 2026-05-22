@@ -42,6 +42,16 @@ npx @kamsqe/gitwhy why "why does processPayment have a 30 second timeout?"
 
 **Or use the web UI** — `npx @kamsqe/gitwhy serve` then open [gitwhy.pages.dev/app/](https://gitwhy.pages.dev/app/). The page is just a UI shell; the local server holds your repo data and API key. Nothing leaves your machine.
 
+**Or use Docker** — for Node-hostile environments:
+
+```sh
+docker run --rm -v $(pwd):/repo -p 3787:3787 \
+  -e GEMINI_API_KEY=$GEMINI_API_KEY \
+  kamsqe/gitwhy serve
+```
+
+The container mounts your repo at `/repo`, exposes the API on `127.0.0.1:3787`, and binds inside the container to `0.0.0.0` so the host can reach it. Multi-arch (linux/amd64, linux/arm64).
+
 ### MCP integration (the headline feature)
 
 Add to your AI editor's MCP config (Cursor, Claude Code, Windsurf, etc.):

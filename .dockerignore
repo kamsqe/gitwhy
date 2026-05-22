@@ -1,0 +1,46 @@
+# Everything we don't need in the build context. Keeping this list tight
+# matters: a 50MB context per `docker build` becomes the slowest step on
+# laptops. The COPY commands in the Dockerfile already pick narrow paths,
+# but the daemon still tars the entire context.
+
+.git
+.gitignore
+.gitwhy
+.npm
+
+# Pre-built artifacts — the Dockerfile builds fresh from source.
+dist
+*.tgz
+
+# Test + lint config used in local dev only
+.eslintrc*
+.prettierrc*
+vitest.config.ts
+tests
+**/__tests__
+**/*.test.ts
+coverage
+
+# Editor / OS noise
+.vscode
+.idea
+.DS_Store
+
+# Web subworkspace — the Dockerfile builds the BACKEND, not the web app.
+# The web app deploys to Cloudflare Pages via GitHub Actions; no need to
+# carry it into the Node container.
+web
+
+# Docs sources, screenshots, recordings, the showcase repos sandbox
+docs
+*.png
+*.mp4
+showcase
+playground
+
+# Misc dev artifacts
+node_modules
+.env
+.env.*
+!/.env.example
+*.log
