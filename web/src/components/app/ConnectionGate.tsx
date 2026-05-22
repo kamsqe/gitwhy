@@ -40,20 +40,18 @@ export function ConnectionGate({ status, onRefresh }: ConnectionGateProps) {
         </p>
 
         <p className="mt-3 text-sm text-gw-text-dim">
-          <strong>One-time setup</strong> (gitwhy isn't on npm yet):
-        </p>
-        <pre className="mt-2"><code>{`git clone https://github.com/kamsqe/gitwhy.git
-cd gitwhy
-pnpm install && pnpm build
-pnpm link --global   # makes \`gitwhy\` work in any repo`}</code></pre>
-
-        <p className="mt-3 text-sm text-gw-text-dim">
-          <strong>Then in the repo you want to analyze:</strong>
+          <strong>Quick start</strong> — in the repo you want to analyze:
         </p>
         <pre className="mt-2"><code>{`cd /path/to/your/repo
-gitwhy init      # one-time, picks LLM provider
-gitwhy index     # builds the AI-enriched index
-gitwhy serve     # starts the local API on :3787`}</code></pre>
+npx gitwhy init      # one-time, picks LLM provider
+npx gitwhy index     # builds the AI-enriched index
+npx gitwhy serve     # starts the local API on :3787`}</code></pre>
+
+        <p className="mt-3 text-sm text-gw-text-dim">
+          Prefer a permanent install?{' '}
+          <code className="text-gw-text">npm install -g gitwhy</code> then drop the
+          <code className="ml-1 text-gw-text">npx</code> prefix.
+        </p>
 
         <p className="mt-3 text-sm text-gw-text-dim">
           Once it's running you'll see <code className="text-gw-text">listening on http://127.0.0.1:3787</code>. Then click below.
