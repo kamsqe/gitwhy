@@ -72,6 +72,62 @@ describe('HTTP server end-to-end', () => {
     });
   });
 
+  describe('POST /api/incident', () => {
+    it('surfaces commits in the look-back window and ranks suspects', async () => {
+      const res = await app.request('/api/incident', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          // Use a timestamp after our last fixture commit (2026-01-03) so
+          // the look-back window covers all three commits.
+          at: '2026-01-04T00:00:00Z',
+          windowMinutes: 60 * 24 * 7, // 1 week
+          afterMinutes: 0,
+        }),
+      });
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as {
+        windowStart: string;
+        windowEnd: string;
+        suspects: Array<{ shortHash: string; suspicionScore: number; category: string }>;
+        hotfixes: unknown[];
+      };
+      expect(body.suspects.length).toBeGreaterThan(0);
+      // Sorted by suspicion descending — confirm the order is non-increasing.
+      const scores = body.suspects.map((s) => s.suspicionScore);
+      for (let i = 1; i < scores.length; i++) {
+        expect(scores[i]).toBeLessThanOrEqual(scores[i - 1] ?? Infinity);
+      }
+    });
+
+    it('rejects unparsable at timestamps', async () => {
+      const res = await app.request('/api/incident', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ at: 'not a date' }),
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it('returns empty buckets when the window is in the future', async () => {
+      const res = await app.request('/api/incident', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          at: '2099-01-01T00:00:00Z',
+          windowMinutes: 60,
+        }),
+      });
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as {
+        suspects: unknown[];
+        hotfixes: unknown[];
+      };
+      expect(body.suspects).toHaveLength(0);
+      expect(body.hotfixes).toHaveLength(0);
+    });
+  });
+
   describe('GET /api/diff', () => {
     it('returns the diff for a real commit hash', async () => {
       // Grab the most recent commit from the fixture and request its diff.

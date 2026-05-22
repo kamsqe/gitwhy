@@ -387,4 +387,42 @@ export const api = {
       `/api/diff?${params}`,
     );
   },
+
+  incident: (input: IncidentInput): Promise<IncidentResponse> =>
+    call<IncidentResponse>('/api/incident', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
 };
+
+export interface IncidentInput {
+  at: string;
+  windowMinutes?: number;
+  afterMinutes?: number;
+  limitPerBucket?: number;
+}
+
+export interface IncidentSuspect {
+  commitHash: string;
+  shortHash: string;
+  date: string;
+  authorName: string;
+  authorEmail: string;
+  originalMessage: string;
+  enrichedSummary: string | null;
+  category: string;
+  filesChanged: number;
+  excludedFilesChanged: number;
+  linesAdded: number;
+  linesRemoved: number;
+  maxBusFactor: number | null;
+  suspicionScore: number;
+}
+
+export interface IncidentResponse {
+  windowStart: string;
+  windowEnd: string;
+  hotfixWindowEnd: string;
+  suspects: IncidentSuspect[];
+  hotfixes: IncidentSuspect[];
+}

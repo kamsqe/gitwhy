@@ -8,6 +8,7 @@ import { AskTab } from './tabs/AskTab';
 import { CatchupTab } from './tabs/CatchupTab';
 import { EstimateTab } from './tabs/EstimateTab';
 import { HistoryTab } from './tabs/HistoryTab';
+import { IncidentTab } from './tabs/IncidentTab';
 import { IndexTab } from './tabs/IndexTab';
 import { RelatedTab } from './tabs/RelatedTab';
 import { RiskTab } from './tabs/RiskTab';
@@ -111,6 +112,8 @@ function TabBody({
       return <EstimateTab />;
     case 'index':
       return <IndexTab health={health} onIndexed={onIndexed} />;
+    case 'incident':
+      return <IncidentTab />;
     case 'status':
       return <StatusTab health={health} />;
     default:
