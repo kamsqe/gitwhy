@@ -1,6 +1,6 @@
 {
   "name": "@kamsqe/gitwhy",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Persistent memory for AI coding agents over your git history. Local-first, MCP-native, with a web UI at gitwhy.pages.dev.",
   "keywords": [
     "git",

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { VERSION } from '../../version.js';
 import type { McpTool, McpToolContext, McpToolResponse } from './types.js';
 
 const pingInputSchema = z.object({
@@ -23,7 +24,7 @@ export const pingTool: McpTool<PingInput> = {
       content: [
         {
           type: 'text',
-          text: `pong from gitwhy v0.0.1${echo}`,
+          text: `pong from gitwhy v${VERSION}${echo}`,
         },
       ],
     };

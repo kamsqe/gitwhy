@@ -8,6 +8,7 @@ import {
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { Tracer } from '../observability/tracer.js';
+import { VERSION } from '../version.js';
 import { createMcpRuntimeFactory } from './runtime.js';
 import type { McpRuntimeFactory } from './runtime.js';
 import { registerBuiltinTools } from './tools/index.js';
@@ -30,7 +31,7 @@ export function createServer(options: CreateServerOptions = {}): Server {
   };
 
   const server = new Server(
-    { name: 'gitwhy', version: '0.0.1' },
+    { name: 'gitwhy', version: VERSION },
     { capabilities: { tools: {} } },
   );
 

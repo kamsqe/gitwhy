@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
+import { VERSION } from '../version.js';
 import { runAliasesList, runAliasesSuggest } from './commands/aliases.js';
 import { runCatchupCommand } from './commands/catchup.js';
 import { runCommitCommand } from './commands/commit.js';
@@ -31,7 +32,7 @@ const program = new Command();
 program
   .name('gitwhy')
   .description('Persistent memory for AI coding agents over your git history.')
-  .version('0.0.1');
+  .version(VERSION);
 
 program
   .command('ping')
@@ -39,7 +40,7 @@ program
   .option('-m, --message <text>', 'optional echo message')
   .action((opts: { message?: string }) => {
     const echo = opts.message ? ` (echo: ${opts.message})` : '';
-    process.stdout.write(`pong from gitwhy v0.0.1${echo}\n`);
+    process.stdout.write(`pong from gitwhy v${VERSION}${echo}\n`);
   });
 
 program

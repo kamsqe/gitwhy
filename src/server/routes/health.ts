@@ -1,9 +1,8 @@
 import type { Hono } from 'hono';
 import { runStatusCommand } from '../../cli/commands/status.js';
+import { VERSION } from '../../version.js';
 import { requireInitialized } from '../app.js';
 import { runDiagnostics } from '../diagnostics.js';
-
-const VERSION = '0.0.1';
 
 export function registerHealthRoutes(app: Hono): void {
   /**
