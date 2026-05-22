@@ -251,11 +251,39 @@ export async function indexRepo(options: IndexerOptions): Promise<IndexResult> {
     upsertCluster(db, cluster);
   }
 
+  // Idempotent retag of the `excluded` column against the current matcher.
+  // Without this, rows written before .gitwhyignore landed (or before the
+  // user added a new pattern to it) keep stale `excluded=0` values that
+  // dedup-by-hash never gets a chance to overwrite. Cheap — one UPDATE per
+  // distinct path that matched.
+  if (options.ignoreMatcher !== undefined) {
+    retagExcludedColumn(db, options.ignoreMatcher);
+  }
+
   return {
     progress,
     durationMs: Date.now() - startTime,
     stoppedReason,
   };
+}
+
+/**
+ * Walk every distinct path in commit_files and UPDATE `excluded` to match
+ * the current matcher decision. Runs in milliseconds even on large DBs —
+ * no LLM calls, no git access, just SQL.
+ */
+function retagExcludedColumn(db: DatabaseType, matcher: IgnoreMatcher): void {
+  const paths = db
+    .prepare(`SELECT DISTINCT path FROM commit_files`)
+    .all() as Array<{ path: string }>;
+  const update = db.prepare(`UPDATE commit_files SET excluded = ? WHERE path = ?`);
+  const txn = db.transaction(() => {
+    for (const { path } of paths) {
+      const target = matcher.isExcluded(path) ? 1 : 0;
+      update.run(target, path);
+    }
+  });
+  txn();
 }
 
 async function enrichMegaCommit(
