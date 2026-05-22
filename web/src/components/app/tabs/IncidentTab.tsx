@@ -83,7 +83,7 @@ export function IncidentTab() {
               type="datetime-local"
               value={atLocal}
               onChange={(e) => setAtLocal(e.target.value)}
-              className="mt-1 w-full rounded-md border border-gw-border bg-gw-surface px-3 py-2 text-sm gw-mono outline-none focus:border-gw-accent"
+              className="mt-1 w-full rounded-md border border-gw-border bg-gw-surface px-3 py-2 text-sm gw-mono focus:border-gw-accent"
               disabled={loading}
             />
           </div>
@@ -97,7 +97,7 @@ export function IncidentTab() {
               step="0.5"
               value={windowHours}
               onChange={(e) => setWindowHours(e.target.value)}
-              className="mt-1 w-full rounded-md border border-gw-border bg-gw-surface px-3 py-2 text-sm gw-mono outline-none focus:border-gw-accent"
+              className="mt-1 w-full rounded-md border border-gw-border bg-gw-surface px-3 py-2 text-sm gw-mono focus:border-gw-accent"
               disabled={loading}
             />
           </div>
@@ -111,7 +111,7 @@ export function IncidentTab() {
               step="0.5"
               value={afterHours}
               onChange={(e) => setAfterHours(e.target.value)}
-              className="mt-1 w-full rounded-md border border-gw-border bg-gw-surface px-3 py-2 text-sm gw-mono outline-none focus:border-gw-accent"
+              className="mt-1 w-full rounded-md border border-gw-border bg-gw-surface px-3 py-2 text-sm gw-mono focus:border-gw-accent"
               disabled={loading}
             />
           </div>

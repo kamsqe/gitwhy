@@ -3,9 +3,15 @@ title: Live demo report
 description: A pre-generated GitWhy report showing what indexing the gitwhy repository itself produces.
 ---
 
+import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
 This page shows what `gitwhy index && gitwhy status && gitwhy risk` looks like when run against the gitwhy repository's own history. It's the same data your editor would see through the MCP tools.
 
 The capstone demo video walks through this report live; the static snapshot here serves both as a fallback for readers without an MCP-capable editor and as proof that the pipeline produces sensible output on real code.
+
+<Aside type="tip" title="Prefer to click around?">
+The [in-browser playground](/playground/) runs the same queries against a pre-indexed `zustand` repo — Risk, History, Related, and (with your own Gemini key) Ask. Same SQL, same ranking, no install.
+</Aside>
 
 ## What was indexed
 
@@ -65,6 +71,10 @@ Top contributors:
 
 This is the canonical capstone-demo example: GitWhy correctly identifies that `src/indexer/indexer.ts` has a single contributor (solo project) and flags this as MEDIUM-risk because bus-factor-of-1 means a single point of failure for the file's institutional knowledge.
 
+<Aside type="note" title="Risk is descriptive, not prescriptive">
+A MEDIUM-risk file isn't bad code — it's *concentrated knowledge*. The signal is "if the one person who knows this file disappears tomorrow, here's where you'd feel it first." Use it to prioritize pairing or documentation, not blame.
+</Aside>
+
 ## Co-changing files
 
 ```sh
@@ -100,3 +110,18 @@ Summary: 5 ok, 0 warn, 0 fail.
 - **The MCP-native split-screen demo** (the headline moment) — that's in the video; see the README for the link once recorded.
 - **A larger demo repo** — running gitwhy against `tj/commander.js` or a similar mid-size OSS repo produces a much richer report. That bundle is being prepared as part of the OSS launch.
 - **Real LLM cost numbers** — the report above used Gemini's free tier; numbers will differ for paid OpenAI / Gemini tiers.
+
+## See it for yourself
+
+<CardGrid>
+  <LinkCard
+    title="Try the playground"
+    description="Pre-indexed zustand repo. Risk / History / Related / Ask in a browser."
+    href="/playground/"
+  />
+  <LinkCard
+    title="Index your own repo"
+    description="Five-minute quickstart from npx to first answer."
+    href="/quickstart/"
+  />
+</CardGrid>

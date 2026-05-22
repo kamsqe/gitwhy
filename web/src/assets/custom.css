@@ -1,28 +1,326 @@
+/*
+ * Starlight chrome overrides for the /docs/* surface.
+ *
+ * Goal: bring Starlight's defaults into harmony with the marketing landing
+ * (marketing.css) without breaking Starlight's information architecture.
+ * The docs pages still read like documentation — but typography, code
+ * blocks, asides, and tables now share a visual language with the
+ * landing. Editorial-technical, restrained, blue-accented.
+ *
+ * Scope: this file is loaded as one of Starlight's `customCss` entries
+ * (see astro.config.mjs). The marketing surface is scoped under
+ * `.marketing` in marketing.css so the two files don't clobber each
+ * other; the React app under /app/ uses its own `gw-*` palette in
+ * app.css.
+ */
+
+/* ─── Web fonts ─── */
+/* Same trio as the marketing surface, so the entire site shares one type
+ * system. Fraunces is reserved for headings; Plus Jakarta Sans for body;
+ * JetBrains Mono for inline + block code. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ─── Palette ─── */
 :root {
+  /* Accent — the same blue as the marketing landing's --mk-accent. */
   --sl-color-accent-low: #1a3a5c;
   --sl-color-accent: #2a6fc9;
   --sl-color-accent-high: #6fa8e8;
+
+  /* Type system. Starlight uses --sl-font for body and --sl-font-mono
+   * for inline / block code. We override both so docs match the landing. */
+  --sl-font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --sl-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+
+  /* Internal vars — used below for shared values. */
+  --gw-font-display: 'Fraunces', 'Times New Roman', Georgia, serif;
+  --gw-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Dark theme — push surfaces a notch darker than Starlight's defaults to
+ * match marketing.css's --mk-bg (#0a0d12) family. The whole site reads
+ * as one continuous space when navigating between / and /docs/. */
+:root[data-theme='dark'] {
+  --sl-color-bg: #0a0d12;
+  --sl-color-bg-nav: #0d1117;
+  --sl-color-bg-sidebar: #0d1117;
+  --sl-color-bg-inline-code: #13171f;
+  --sl-color-hairline: #1f262e;
+  --sl-color-hairline-light: #2a323d;
+  --sl-color-hairline-shade: #1f262e;
+  --sl-color-text: #f4f4f5;
+  --sl-color-text-accent: #6fa8e8;
+  --sl-color-gray-1: #f4f4f5;
+  --sl-color-gray-2: #d4d4d8;
+  --sl-color-gray-3: #a1a1aa;
+  --sl-color-gray-4: #71717a;
+  --sl-color-gray-5: #3f3f46;
+  --sl-color-gray-6: #1f262e;
+  --sl-color-gray-7: #13171f;
 }
 
 [data-theme='light'] {
   --sl-color-accent-low: #cfdfee;
   --sl-color-accent: #2a6fc9;
   --sl-color-accent-high: #163a6e;
+  --sl-color-text-accent: #2a6fc9;
 }
 
+/* ─── Headings ─── */
+/* All headings switch to Fraunces — the same display serif the landing
+ * uses. Slight optical-size tuning so large headings get the wider,
+ * confident cut and inline headings stay compact. The h1 in particular
+ * is the visual hand-off from the landing page; using the same font
+ * makes the transition feel seamless. */
+.sl-markdown-content h1,
+.sl-markdown-content h2,
+.sl-markdown-content h3,
+.sl-markdown-content h4,
+.sl-markdown-content h5,
+.sl-markdown-content h6,
+h1.page-title,
+.page-title {
+  font-family: var(--gw-font-display);
+  font-weight: 500;
+  font-optical-sizing: auto;
+  letter-spacing: -0.018em;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.sl-markdown-content h1,
+h1.page-title,
+.page-title {
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1.08;
+}
+
+.sl-markdown-content h2 {
+  font-weight: 500;
+  font-size: clamp(1.5rem, 2.5vw, 1.875rem);
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--sl-color-hairline);
+}
+
+.sl-markdown-content h2:first-of-type {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 2rem;
+}
+
+.sl-markdown-content h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 2rem;
+}
+
+/* Italic headings get Fraunces's swashy alternates — distinctive cut. */
+.sl-markdown-content h1 em,
+.sl-markdown-content h2 em,
+.sl-markdown-content h3 em {
+  font-style: italic;
+  font-feature-settings: 'ss01' 1;
+  color: var(--sl-color-text-accent);
+}
+
+/* ─── Body type ─── */
+.sl-markdown-content {
+  font-size: 1rem;
+  line-height: 1.7;
+  letter-spacing: -0.005em;
+}
+
+.sl-markdown-content p {
+  text-wrap: pretty;
+}
+
+.sl-markdown-content strong,
+.sl-markdown-content b {
+  font-weight: 600;
+  color: var(--sl-color-white);
+}
+
+[data-theme='light'] .sl-markdown-content strong,
+[data-theme='light'] .sl-markdown-content b {
+  color: var(--sl-color-black);
+}
+
+/* ─── Inline + block code ─── */
+.sl-markdown-content :not(pre) > code {
+  font-size: 0.875em;
+  font-family: var(--sl-font-mono);
+  font-feature-settings: 'liga' 0;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  border: 1px solid var(--sl-color-hairline);
+  background: var(--sl-color-bg-inline-code);
+  color: var(--sl-color-text-accent);
+}
+
+[data-theme='light'] .sl-markdown-content :not(pre) > code {
+  color: #1a3a5c;
+}
+
+/* Starlight uses expressive-code for fenced blocks. We tune only the
+ * frame chrome so it sits in our palette without re-tokenizing the
+ * syntax highlighting (which expressive-code controls). */
+.expressive-code {
+  margin: 1.5rem 0;
+}
+
+.expressive-code .frame {
+  border-radius: 10px;
+  border: 1px solid var(--sl-color-hairline);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+.expressive-code .frame pre {
+  background: #0f131a;
+  font-size: 0.8125rem;
+  line-height: 1.7;
+}
+
+[data-theme='light'] .expressive-code .frame pre {
+  background: #f7f7fa;
+}
+
+/* ─── Asides (Starlight callouts) ─── */
+/* The four built-in aside types (note / tip / caution / danger) get a
+ * tighter, more typographic treatment. Left-bar accent + label aligns
+ * with the marketing surface's "research-paper marker" feel. */
+.starlight-aside {
+  border-radius: 8px;
+  border: 1px solid var(--sl-color-hairline);
+  border-left-width: 3px;
+  padding: 1rem 1.25rem;
+  background: var(--sl-color-bg-inline-code);
+}
+
+.starlight-aside__title {
+  font-family: var(--sl-font-mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 500;
+}
+
+.starlight-aside--note {
+  border-left-color: var(--sl-color-accent);
+}
+.starlight-aside--note .starlight-aside__title {
+  color: var(--sl-color-accent-high);
+}
+
+.starlight-aside--tip {
+  border-left-color: #10b981;
+}
+.starlight-aside--tip .starlight-aside__title {
+  color: #10b981;
+}
+
+.starlight-aside--caution {
+  border-left-color: #fbbf24;
+}
+.starlight-aside--caution .starlight-aside__title {
+  color: #fbbf24;
+}
+
+.starlight-aside--danger {
+  border-left-color: #ef4444;
+}
+.starlight-aside--danger .starlight-aside__title {
+  color: #ef4444;
+}
+
+/* ─── Tables ─── */
+/* Editorial-paper feel: thin rules, mono header, breathable padding. */
+.sl-markdown-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.5rem 0;
+  font-size: 0.9375rem;
+}
+
+.sl-markdown-content th {
+  font-family: var(--sl-font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--sl-color-gray-3);
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--sl-color-hairline-light);
+  background: transparent;
+}
+
+.sl-markdown-content td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--sl-color-hairline);
+  vertical-align: top;
+}
+
+.sl-markdown-content tr:last-child td {
+  border-bottom: none;
+}
+
+/* ─── Links ─── */
+.sl-markdown-content a {
+  color: var(--sl-color-text-accent);
+  text-decoration-color: color-mix(in srgb, var(--sl-color-text-accent) 35%, transparent);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  transition: text-decoration-color 0.18s var(--gw-ease-out), color 0.18s var(--gw-ease-out);
+}
+
+.sl-markdown-content a:hover {
+  text-decoration-color: var(--sl-color-text-accent);
+}
+
+/* ─── Sidebar ─── */
+/* Starlight sidebars default to mid-weight; we tighten the visual
+ * hierarchy so group labels stand apart from items. */
+.sidebar-content .group-label {
+  font-family: var(--sl-font-mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--sl-color-gray-4);
+  font-weight: 500;
+}
+
+/* ─── Site title ─── */
+/* The header's site title should match the landing's display font for a
+ * seamless cross-surface identity. */
+.site-title {
+  font-family: var(--gw-font-display);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  font-size: 1.0625rem;
+}
+
+/* ─── Hero (used by the legacy index splash; harmless when unused) ─── */
 .hero {
   padding: 2rem 0;
 }
 
 .hero h1 {
-  font-size: 2.5rem;
-  line-height: 1.1;
+  font-family: var(--gw-font-display);
+  font-size: clamp(2.25rem, 5vw, 3.25rem);
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
 }
 
 .hero-tagline {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   color: var(--sl-color-gray-3);
-  margin-top: 0.5rem;
+  margin-top: 0.75rem;
+  line-height: 1.55;
+  text-wrap: balance;
 }
 
 .hero-cta {
@@ -30,4 +328,55 @@
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
+}
+
+/* ─── Horizontal rule ─── */
+.sl-markdown-content hr {
+  border: none;
+  height: 1px;
+  background: var(--sl-color-hairline);
+  margin: 2.5rem 0;
+  position: relative;
+}
+
+.sl-markdown-content hr::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--sl-color-hairline-light);
+  transform: translate(-50%, -50%);
+}
+
+/* ─── Blockquotes ─── */
+.sl-markdown-content blockquote {
+  margin: 1.5rem 0;
+  padding: 0.25rem 0 0.25rem 1.25rem;
+  border-left: 2px solid var(--sl-color-accent);
+  color: var(--sl-color-gray-2);
+  font-style: italic;
+}
+
+.sl-markdown-content blockquote p {
+  margin: 0.25rem 0;
+}
+
+/* ─── Lists ─── */
+.sl-markdown-content ul li::marker,
+.sl-markdown-content ol li::marker {
+  color: var(--sl-color-gray-4);
+}
+
+.sl-markdown-content li {
+  margin: 0.375rem 0;
+}
+
+/* ─── Reduce motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  .sl-markdown-content a {
+    transition: none;
+  }
 }

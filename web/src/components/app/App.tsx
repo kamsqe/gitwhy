@@ -129,28 +129,29 @@ function TabBody({
 
 function NotInitializedView() {
   return (
-    <div className="mx-auto max-w-2xl space-y-4 p-6">
-      <h1 className="text-2xl font-semibold">Repo not indexed yet</h1>
-      <p className="text-sm text-gw-text-dim">
+    <div className="mx-auto max-w-2xl space-y-5 p-6 pt-12">
+      <p className="gw-label">§ getting started</p>
+      <h1 className="gw-display text-[2rem]">Repo not indexed yet</h1>
+      <p className="text-sm leading-relaxed text-gw-text-dim">
         The local backend is connected, but the repository at this path
-        hasn't been indexed. Two ways to fix that:
+        hasn&apos;t been indexed. Two ways to fix that:
       </p>
       <div className="space-y-3">
-        <div className="rounded-md border border-gw-accent/40 bg-gw-accent/5 p-4">
+        <div className="rounded-lg border border-gw-accent/40 bg-gw-accent/[0.06] p-4">
           <p className="text-sm font-medium text-gw-text">In the browser</p>
-          <p className="mt-1 text-sm text-gw-text-dim">
+          <p className="mt-1 text-sm leading-relaxed text-gw-text-dim">
             Hit the{' '}
-            <a href="#estimate" className="text-gw-accent underline decoration-dotted">
+            <a href="#estimate" className="text-gw-accent underline decoration-dotted underline-offset-2">
               Estimate
             </a>{' '}
             tab to preview cost, then the{' '}
-            <a href="#index" className="text-gw-accent underline decoration-dotted">
+            <a href="#index" className="text-gw-accent underline decoration-dotted underline-offset-2">
               Index
             </a>{' '}
             tab to actually build the index — live progress, cancel any time.
           </p>
         </div>
-        <div className="rounded-md border border-gw-border p-4">
+        <div className="rounded-lg border border-gw-border p-4">
           <p className="text-sm font-medium text-gw-text">From the CLI</p>
           <pre className="mt-2"><code>{`gitwhy init
 gitwhy estimate

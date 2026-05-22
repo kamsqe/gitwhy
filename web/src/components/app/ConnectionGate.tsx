@@ -31,7 +31,7 @@ export function ConnectionGate({ status, onRefresh }: ConnectionGateProps) {
       <Card className="w-full max-w-2xl">
         <div className="flex items-center gap-3">
           <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-500" aria-hidden />
-          <h2 className="text-lg font-semibold">Local backend not running</h2>
+          <h2 className="gw-display text-[1.375rem] font-medium">Local backend not running</h2>
         </div>
 
         <p className="mt-3 text-sm text-gw-text-dim">

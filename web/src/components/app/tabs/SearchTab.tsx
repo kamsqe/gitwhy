@@ -52,7 +52,7 @@ export function SearchTab() {
               if (e.key === 'Enter') void submit();
             }}
             placeholder='e.g. "dependency updates" or "timeout handling"'
-            className="flex-1 rounded-md border border-gw-border bg-gw-surface px-3 py-2 text-sm outline-none focus:border-gw-accent"
+            className="flex-1 rounded-md border border-gw-border bg-gw-surface px-3 py-2 text-sm focus:border-gw-accent"
             disabled={loading}
           />
           <Button onClick={() => void submit()} disabled={loading || !query.trim()}>

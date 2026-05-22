@@ -32,7 +32,7 @@ export function Header({ health }: HeaderProps) {
           className="flex items-center gap-2 text-gw-text no-underline hover:opacity-80"
         >
           <span className="inline-block h-6 w-6 rounded-full bg-gw-accent" aria-hidden />
-          <span className="font-semibold">GitWhy</span>
+          <span className="gw-display text-[1.0625rem] font-medium tracking-tight">GitWhy</span>
         </a>
 
         <div className="flex items-center gap-2 text-xs">

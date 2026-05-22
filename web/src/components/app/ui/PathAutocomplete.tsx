@@ -116,7 +116,7 @@ export function PathAutocomplete({
         disabled={disabled}
         autoComplete="off"
         spellCheck={false}
-        className={`w-full rounded-md border border-gw-border bg-gw-surface px-3 py-2 text-sm gw-mono outline-none focus:border-gw-accent ${className}`}
+        className={`w-full rounded-md border border-gw-border bg-gw-surface px-3 py-2 text-sm gw-mono focus:border-gw-accent ${className}`}
       />
       {open && suggestions.length > 0 && (
         <ul

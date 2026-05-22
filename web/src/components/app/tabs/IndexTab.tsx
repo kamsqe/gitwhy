@@ -85,7 +85,7 @@ export function IndexTab({ health, onIndexed }: IndexTabProps) {
               value={budgetInput}
               onChange={(e) => setBudgetInput(e.target.value)}
               placeholder="e.g. 0.50  (skip to use default)"
-              className="flex-1 rounded-md border border-gw-border bg-gw-surface px-3 py-2 text-sm gw-mono outline-none focus:border-gw-accent"
+              className="flex-1 rounded-md border border-gw-border bg-gw-surface px-3 py-2 text-sm gw-mono focus:border-gw-accent"
               disabled={busy}
             />
             <Button onClick={() => void onStart()} disabled={busy}>

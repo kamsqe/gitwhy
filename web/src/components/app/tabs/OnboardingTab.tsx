@@ -73,7 +73,7 @@ export function OnboardingTab() {
               value={limit}
               onChange={(e) => setLimit(Math.max(1, Math.min(50, Number.parseInt(e.target.value, 10) || 10)))}
               onBlur={() => void load(limit)}
-              className="mt-1 w-full rounded-md border border-gw-border bg-gw-surface px-3 py-2 text-sm gw-mono outline-none focus:border-gw-accent"
+              className="mt-1 w-full rounded-md border border-gw-border bg-gw-surface px-3 py-2 text-sm gw-mono focus:border-gw-accent"
               disabled={loading}
             />
           </div>
