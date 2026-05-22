@@ -393,7 +393,34 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(input),
     }),
+
+  onboarding: (input: { limit?: number } = {}): Promise<OnboardingResponse> =>
+    call<OnboardingResponse>('/api/onboarding', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
 };
+
+export interface OnboardingCommit {
+  commitHash: string;
+  shortHash: string;
+  date: string;
+  authorName: string;
+  authorEmail: string;
+  originalMessage: string;
+  enrichedSummary: string;
+  category: string;
+  filesChanged: number;
+  filesAdded: number;
+  score: number;
+  reason: string;
+}
+
+export interface OnboardingResponse {
+  totalCommits: number;
+  candidatesConsidered: number;
+  recommendations: OnboardingCommit[];
+}
 
 export interface IncidentInput {
   at: string;

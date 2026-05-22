@@ -10,6 +10,7 @@ import { EstimateTab } from './tabs/EstimateTab';
 import { HistoryTab } from './tabs/HistoryTab';
 import { IncidentTab } from './tabs/IncidentTab';
 import { IndexTab } from './tabs/IndexTab';
+import { OnboardingTab } from './tabs/OnboardingTab';
 import { RelatedTab } from './tabs/RelatedTab';
 import { RiskTab } from './tabs/RiskTab';
 import { SearchTab } from './tabs/SearchTab';
@@ -114,6 +115,8 @@ function TabBody({
       return <IndexTab health={health} onIndexed={onIndexed} />;
     case 'incident':
       return <IncidentTab />;
+    case 'onboarding':
+      return <OnboardingTab />;
     case 'status':
       return <StatusTab health={health} />;
     default:

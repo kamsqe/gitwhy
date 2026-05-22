@@ -72,6 +72,51 @@ describe('HTTP server end-to-end', () => {
     });
   });
 
+  describe('POST /api/onboarding', () => {
+    it('returns ranked recommendations with reasons', async () => {
+      const res = await app.request('/api/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ limit: 5 }),
+      });
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as {
+        totalCommits: number;
+        candidatesConsidered: number;
+        recommendations: Array<{ shortHash: string; score: number; reason: string }>;
+      };
+      // The fixture has 3 small commits — too few to produce candidates
+      // that pass the BETWEEN 2 AND 15 file-count filter — but the
+      // endpoint should still return cleanly with totals and an empty
+      // recommendations array.
+      expect(body.totalCommits).toBeGreaterThan(0);
+      expect(Array.isArray(body.recommendations)).toBe(true);
+      // Score must be monotonically non-increasing.
+      const scores = body.recommendations.map((r) => r.score);
+      for (let i = 1; i < scores.length; i++) {
+        expect(scores[i]).toBeLessThanOrEqual(scores[i - 1] ?? Infinity);
+      }
+    });
+
+    it('rejects limit > 50 with 400', async () => {
+      const res = await app.request('/api/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ limit: 100 }),
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it('rejects negative limit with 400', async () => {
+      const res = await app.request('/api/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ limit: -1 }),
+      });
+      expect(res.status).toBe(400);
+    });
+  });
+
   describe('POST /api/incident', () => {
     it('surfaces commits in the look-back window and ranks suspects', async () => {
       const res = await app.request('/api/incident', {

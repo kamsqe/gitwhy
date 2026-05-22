@@ -13,6 +13,7 @@ import { registerIncidentRoutes } from './routes/incident.js';
 import { registerIndexJobRoutes } from './routes/index-job.js';
 import { registerInsightRoutes } from './routes/insight.js';
 import { registerMiscRoutes } from './routes/misc.js';
+import { registerOnboardingRoutes } from './routes/onboarding.js';
 import { registerQueryRoutes } from './routes/query.js';
 
 export interface ServerOptions {
@@ -91,6 +92,7 @@ export function createApp(options: ServerOptions): Hono {
   registerIndexJobRoutes(app);
   registerDiffRoutes(app);
   registerIncidentRoutes(app);
+  registerOnboardingRoutes(app);
 
   app.notFound((c) =>
     c.json(
