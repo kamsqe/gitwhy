@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { PlaygroundShell } from './PlaygroundShell';
 import { openRemoteDatabase } from './lib/sqljs';
 import type { Database } from 'sql.js';
 
@@ -226,59 +227,6 @@ function ErrorView({ message }: { message: string }) {
   );
 }
 
-/**
- * Once the DB is loaded, render the actual app shell with tabs.
- * Stubbed for now — Phase C.2 ports the real tab implementations to
- * use client-side SQL queries against this `db` handle.
- */
 function ReadyView({ db, demo }: { db: Database; demo: Demo }) {
-  return (
-    <div className="mx-auto max-w-3xl space-y-4 p-8">
-      <h2 className="text-2xl font-semibold">{demo.name} loaded</h2>
-      <p className="text-sm text-gw-text-dim">
-        SQLite database is in browser memory. Tab implementations coming next —
-        for now, here's a quick health check:
-      </p>
-      <DbHealthCheck db={db} />
-    </div>
-  );
-}
-
-function DbHealthCheck({ db }: { db: Database }) {
-  const [info, setInfo] = useState<string | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-
-  useEffect(() => {
-    try {
-      const result = db.exec(
-        `SELECT
-            (SELECT COUNT(*) FROM commits) AS commits,
-            (SELECT COUNT(*) FROM commit_files) AS file_rows,
-            (SELECT COUNT(DISTINCT path) FROM commit_files) AS distinct_paths,
-            (SELECT COUNT(DISTINCT author_email) FROM commits) AS authors`,
-      );
-      const row = result[0]?.values[0];
-      if (!row) {
-        setErr('No rows returned by health-check query.');
-        return;
-      }
-      const [commits, fileRows, paths, authors] = row;
-      setInfo(
-        `${commits} commits · ${fileRows} file-change rows · ${paths} distinct paths · ${authors} authors`,
-      );
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
-    }
-  }, [db]);
-
-  if (err) {
-    return <pre className="text-xs text-red-300">{err}</pre>;
-  }
-  if (!info) return <p className="text-xs text-gw-text-faint">querying…</p>;
-  return (
-    <div className="rounded-md border border-gw-border bg-gw-surface p-4">
-      <p className="text-xs uppercase tracking-wider text-gw-text-faint">Database stats</p>
-      <p className="mt-2 gw-mono text-sm text-gw-text">{info}</p>
-    </div>
-  );
+  return <PlaygroundShell db={db} demoName={demo.name} />;
 }
