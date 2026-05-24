@@ -1,0 +1,28 @@
+# Cloudflare Worker that proxies large pre-indexed gitwhy SQLite files
+# from GitHub Releases to the browser playground, adding the CORS headers
+# GitHub doesn't ship with its release assets.
+#
+# Why this exists: gitwhy.pages.dev/playground/ fetches .db files via
+# sql.js and stuffs them into in-browser SQLite. Files small enough to
+# bundle (≤25 MB, e.g. zustand) live in web/public/playground/ and ship
+# as static assets. Anything bigger goes to a GitHub Release, but GH
+# Release downloads lack `Access-Control-Allow-Origin`, so a browser
+# fetch from gitwhy.pages.dev is blocked. This Worker is the thin shim
+# that re-emits the asset with `ACAO: *`.
+#
+# Deploy:
+#   cd web/workers/playground-proxy
+#   wrangler deploy
+#
+# Default URL: https://gitwhy-playground-proxy.<account>.workers.dev/
+
+name = "gitwhy-playground-proxy"
+main = "src/index.js"
+compatibility_date = "2026-05-01"
+
+# Single route serves everything; we map the URL path to the upstream
+# release asset via the ASSET_MAP below. Free tier limits (100k req/day)
+# are far more than the playground will ever need.
+
+[observability]
+enabled = true

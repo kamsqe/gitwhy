@@ -28,6 +28,19 @@ const DEMOS: Demo[] = [
     approxSizeMb: 1.2,
     commits: 88,
   },
+  {
+    id: 'express',
+    name: 'express',
+    description:
+      'Node.js classic web framework — 16+ years of history (2009 → today), 4,491 AI-enriched commits. Demonstrates GitWhy on a mature mid-size repo: real hotspots, bus-factor patterns, and a co-change graph dense enough to be visually interesting.',
+    // Served via the gitwhy-playground-proxy Worker, which adds CORS
+    // headers on top of the GitHub Release download (61 MB raw,
+    // ~48 MB on the wire after brotli). See
+    // web/workers/playground-proxy/src/index.js for the why.
+    url: 'https://gitwhy-playground-proxy.mirmanoov.workers.dev/express.db',
+    approxSizeMb: 61,
+    commits: 6146,
+  },
 ];
 
 // Repos that are queued / mid-indexing but not yet available in the playground.
@@ -39,14 +52,7 @@ interface PendingDemo {
   approxCommits: number;
   note: string;
 }
-const PENDING_DEMOS: PendingDemo[] = [
-  {
-    name: 'express',
-    description: 'Node.js classic web framework. Full history since 2009.',
-    approxCommits: 6146,
-    note: 'Indexing in progress — full history takes a few hours on free-tier Gemini.',
-  },
-];
+const PENDING_DEMOS: PendingDemo[] = [];
 
 export function Playground() {
   const [selected, setSelected] = useState<string | null>(null);
